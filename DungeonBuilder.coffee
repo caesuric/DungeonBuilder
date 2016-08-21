@@ -1,76 +1,77 @@
-$(document).ready ->
-    simulator.initialize()
-    setInterval(simulator.tick,10)
+class Dungeon
+    constructor: ->
+        @minions = 1
+        @monsters = 1
+        @acolytes = 10
+        @treasure = 1
 
-simulator =
-    initialize: ->
-        simulator.minions = 1
-        simulator.monsters = 1
-        simulator.acolytes = 10
-        simulator.treasure = 1
-        
-        simulator.roomProgress = 0
-        simulator.rooms = 0
-        simulator.adventurers = 0
-        simulator.reputation = 0
-        simulator.devMultiplier = 1
-        document.getElementById('buyMinion').addEventListener 'click', simulator.buyMinion
-        document.getElementById('buyMonster').addEventListener 'click', simulator.buyMonster
-        document.getElementById('buyAcolyte').addEventListener 'click', simulator.buyAcolyte
-        document.getElementById('buyAllMinions').addEventListener 'click', simulator.buyAllMinions
-        document.getElementById('buyAllMonsters').addEventListener 'click', simulator.buyAllMonsters
-        document.getElementById('buyAllAcolytes').addEventListener 'click', simulator.buyAllAcolytes
-    tick: ->
-        simulator.roomProgress += simulator.minions * simulator.devMultiplier
+        @roomProgress = 0
+        @rooms = 0
+        @adventurers = 0
+        @reputation = 0
+        @devMultiplier = 1
+        $('#buyMinion').on 'click', @buyMinion
+        $('#buyMonster').on 'click', @buyMonster
+        $('#buyAcolyte').on 'click', @buyAcolyte
+        $('#buyAllMinions').on 'click', @buyAllMinions
+        $('#buyAllMonsters').on 'click', @buyAllMonsters
+        $('#buyAllAcolytes').on 'click', @buyAllAcolytes
+    tick: =>
+        @roomProgress += @minions * @devMultiplier
         costToBuild = 2916000
-        if simulator.rooms >= 100
+        if @rooms >= 100
             costToBuild = 1247114880
-        else if simulator.rooms >= 30
+        else if @rooms >= 30
             costToBuild = 1247114880
-        else if simulator.rooms >= 20
+        else if @rooms >= 20
             costToBuild = 1247114880
-        else if simulator.rooms >= 5
+        else if @rooms >= 5
             costToBuild = 56687040
-        if simulator.roomProgress >= costToBuild
-            simulator.roomProgress = 0
-            simulator.rooms += 1
-        roomProgressPercent = Math.floor((simulator.roomProgress/costToBuild*100)).toString()
-        document.getElementById('roomProgress').innerHTML="Room Progress: "+roomProgressPercent+"%"
-        document.getElementById('rooms').innerHTML="Rooms: "+simulator.rooms.toString()
-        for i in [0,Math.floor(simulator.treasure*simulator.devMultiplier)]
+        if @roomProgress >= costToBuild
+            @roomProgress = 0
+            @rooms += 1
+        roomProgressPercent = Math.floor((@roomProgress/costToBuild*100)).toString()
+        $('#roomProgressCount').text "#{roomProgressPercent}%"
+        $('#roomCount').text @rooms
+        for i in [0,Math.floor(@treasure*@devMultiplier)]
             adventurerRoll = Math.floor((Math.random() * 6000) + 1)
             if adventurerRoll == 6000
-                simulator.adventurers+=1
-                simulator.treasure+=1
-        document.getElementById('adventurers').innerHTML="Adventurers: "+simulator.adventurers.toString()
-        document.getElementById('treasure').innerHTML="Treasure: "+simulator.treasure.toString()
-        simulator.reputation += simulator.acolytes * simulator.devMultiplier
-        document.getElementById('minions').innerHTML="Minions: "+simulator.minions.toString()
-        document.getElementById('monsters').innerHTML="Monsters: "+simulator.monsters.toString()
-        document.getElementById('acolytes').innerHTML="Acolytes: "+simulator.acolytes.toString()
-        document.getElementById('reputation').innerHTML="Reputation: "+simulator.reputation.toString()
-    buyMinion: ->
-        if (simulator.reputation>30000)
-            simulator.reputation -= 30000
-            simulator.minions += 1
-    buyMonster: ->
-        if (simulator.reputation>30000)
-            simulator.reputation -= 30000
-            simulator.monsters += 1
-    buyAcolyte: ->
-        if (simulator.reputation>30000)
-            simulator.reputation -= 30000
-            simulator.acolytes += 1
-    buyAllMinions: ->
-        while (simulator.reputation>=30000)
-            simulator.reputation -= 30000
-            simulator.minions += 1
-    buyAllMonsters: ->
-        while (simulator.reputation>=30000)
-            simulator.reputation -= 30000
-            simulator.monsters += 1
-    buyAllAcolytes: ->
-        while (simulator.reputation>=30000)
-            simulator.reputation -= 30000
-            simulator.acolytes += 1
-            
+                @adventurers+=1
+                @treasure+=1
+        $('#adventurerCount').text @adventurers
+        $('#treasureCount').text @treasure
+        @reputation += @acolytes * @devMultiplier
+        $('#minionCount').text @minions
+        $('#monsterCount').text @monsters
+        $('#acolyteCount').text @acolytes
+        $('#reputationCount').text @reputation
+    buyMinion: =>
+        if (@reputation>30000)
+            @reputation -= 30000
+            @minions += 1
+    buyMonster: =>
+        if (@reputation>30000)
+            @reputation -= 30000
+            @monsters += 1
+    buyAcolyte: =>
+        if (@reputation>30000)
+            @reputation -= 30000
+            @acolytes += 1
+    buyAllMinions: =>
+        while (@reputation>=30000)
+            @reputation -= 30000
+            @minions += 1
+    buyAllMonsters: =>
+        while (@reputation>=30000)
+            @reputation -= 30000
+            @monsters += 1
+    buyAllAcolytes: =>
+        while (@reputation>=30000)
+            @reputation -= 30000
+            @acolytes += 1
+
+$(document).ready ->
+    simulator = new Dungeon
+    setInterval(simulator.tick,10)
+    # setInterval(simulator.tick,1000)
+
