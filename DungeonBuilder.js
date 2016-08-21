@@ -10,6 +10,7 @@
       this.buyAcolyte = __bind(this.buyAcolyte, this);
       this.buyMonster = __bind(this.buyMonster, this);
       this.buyMinion = __bind(this.buyMinion, this);
+      this.maxNumberToBuy = __bind(this.maxNumberToBuy, this);
       this.tick = __bind(this.tick, this);
       this.minions = 1;
       this.monsters = 1;
@@ -20,6 +21,7 @@
       this.adventurers = 0;
       this.reputation = 0;
       this.devMultiplier = 1;
+      this.cost = 30000;
       $('#buyMinion').on('click', this.buyMinion);
       $('#buyMonster').on('click', this.buyMonster);
       $('#buyAcolyte').on('click', this.buyAcolyte);
@@ -63,7 +65,14 @@
       $('#minionCount').text(this.minions);
       $('#monsterCount').text(this.monsters);
       $('#acolyteCount').text(this.acolytes);
-      return $('#reputationCount').text(this.reputation);
+      $('#reputationCount').text(this.reputation);
+      $('#buyAllMinions').text("Buy All (" + (this.maxNumberToBuy(this.cost)) + ")");
+      $('#buyAllMonsters').text("Buy All (" + (this.maxNumberToBuy(this.cost)) + ")");
+      return $('#buyAllAcolytes').text("Buy All (" + (this.maxNumberToBuy(this.cost)) + ")");
+    };
+
+    Dungeon.prototype.maxNumberToBuy = function(cost) {
+      return Math.floor(this.reputation / cost);
     };
 
     Dungeon.prototype.buyMinion = function() {
@@ -88,33 +97,24 @@
     };
 
     Dungeon.prototype.buyAllMinions = function() {
-      var _results;
-      _results = [];
-      while (this.reputation >= 30000) {
-        this.reputation -= 30000;
-        _results.push(this.minions += 1);
-      }
-      return _results;
+      var number;
+      number = this.maxNumberToBuy(this.cost);
+      this.reputation -= this.cost * number;
+      return this.minions += number;
     };
 
     Dungeon.prototype.buyAllMonsters = function() {
-      var _results;
-      _results = [];
-      while (this.reputation >= 30000) {
-        this.reputation -= 30000;
-        _results.push(this.monsters += 1);
-      }
-      return _results;
+      var number;
+      number = this.maxNumberToBuy(this.cost);
+      this.reputation -= this.cost * number;
+      return this.monsters += number;
     };
 
     Dungeon.prototype.buyAllAcolytes = function() {
-      var _results;
-      _results = [];
-      while (this.reputation >= 30000) {
-        this.reputation -= 30000;
-        _results.push(this.acolytes += 1);
-      }
-      return _results;
+      var number;
+      number = this.maxNumberToBuy(this.cost);
+      this.reputation -= this.cost * number;
+      return this.acolytes += number;
     };
 
     return Dungeon;

@@ -10,6 +10,9 @@ class Dungeon
         @adventurers = 0
         @reputation = 0
         @devMultiplier = 1
+
+        @cost = 30000
+
         $('#buyMinion').on 'click', @buyMinion
         $('#buyMonster').on 'click', @buyMonster
         $('#buyAcolyte').on 'click', @buyAcolyte
@@ -45,6 +48,12 @@ class Dungeon
         $('#monsterCount').text @monsters
         $('#acolyteCount').text @acolytes
         $('#reputationCount').text @reputation
+        $('#buyAllMinions').text "Buy All (#{@maxNumberToBuy @cost})"
+        $('#buyAllMonsters').text "Buy All (#{@maxNumberToBuy @cost})"
+        $('#buyAllAcolytes').text "Buy All (#{@maxNumberToBuy @cost})"
+
+    maxNumberToBuy: (cost) =>
+      Math.floor(@reputation/cost)
     buyMinion: =>
         if (@reputation>30000)
             @reputation -= 30000
@@ -58,17 +67,17 @@ class Dungeon
             @reputation -= 30000
             @acolytes += 1
     buyAllMinions: =>
-        while (@reputation>=30000)
-            @reputation -= 30000
-            @minions += 1
+        number = @maxNumberToBuy @cost
+        @reputation -= @cost * number
+        @minions += number
     buyAllMonsters: =>
-        while (@reputation>=30000)
-            @reputation -= 30000
-            @monsters += 1
+        number = @maxNumberToBuy @cost
+        @reputation -= @cost * number
+        @monsters += number
     buyAllAcolytes: =>
-        while (@reputation>=30000)
-            @reputation -= 30000
-            @acolytes += 1
+        number = @maxNumberToBuy @cost
+        @reputation -= @cost * number
+        @acolytes += number
 
 $(document).ready ->
     simulator = new Dungeon
