@@ -4,23 +4,52 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title>Dungeon Builder</title>
     <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js" type="text/javascript"></script>
     <script src="DungeonBuilder.js" type="text/javascript"></script>
+    <link href='css/style.css' rel='stylesheet' type='text/css'>
   </head>
   <body style='background-color: #FFFFFF;'>
-    <div id="reputationLabel">Reputation:<span id="reputationCount"></span></div>
+    <div class="unitBox">
+      Word of your dungeon has spread far and wide. Your reputation allows you to recruit minions, monsters and acolytes to improve your dungeon.<br/>
+      You currently have <span id="reputationCount"></span> reputation.</br>
+      You earn <span id="reputationRate"></span> reputation per second.
+    </div>
 
-    <button id="buyAllMinions">Buy All</button><button id="buyMinion">Buy</button>
-    <span id="minionLabel">Minions:</span><span id="minionCount"></span><br>
+    <div class="unitBox">
+      Minions dig additional rooms in your dungeon.<br/>
+      You currently have <span id="minionCount"></span> minions.<br>
+      <div class="progressOuter" id="roomProgress">
+        <div class="progressInner" id="roomBar"> </div>
+        <div class="progressDescription">
+          Excavation complete in <span id="roomETA"></span>
+        </div>
+      </div>
+      Your dungeon has <span id="roomCount"></span> rooms.<br/>
+      <button id="buyAllMinions">Buy All</button><button id="buyMinion">Buy Minion</button>
 
-    <button id="buyAllMonsters">Buy All</button><button id="buyMonster">Buy</button>
-    <span id="monsterLabel">Monsters:</span><span id="monsterCount"></span><br>
 
-    <button id="buyAllAcolytes">Buy All</button><button id="buyAcolyte">Buy</button>
-    <span id="acolyteLabel">Acolytes:</span><span id="acolyteCount"></span><br>
+    </div>
 
-    <div id="treasureLabel">Treasure:<span id="treasureCount"></span></div>
-    <div id="roomProgressLabel">Room Progress:<span id="roomProgressCount"></span></div>
-    <div id="roomLabel">Rooms:<span id="roomCount"></span></div>
-    <div id="adventurerLabel">Adventurers:<span id="adventurerCount"></span></div>
+    <div class="unitBox">
+      Monsters protect your dungeon, killing adventurers that enter.<br/>
+      You currently have <span id="monsterCount"></span> monsters.<br>
+      <button id="buyAllMonsters">Buy All</button><button id="buyMonster">Buy Monster</button>
+    </div>
+
+    <div class="unitBox">
+      Acolytes go out and teach of your power, gaining you reputation.<br/>
+      Each acolyte earns you 100 reputation per second.<br/>
+      Your acolytes earn you <span id='acolyteReputationRate'></span> reputation per second.<br/>
+      You currently have <span id="acolyteCount"></span> acolytes.<br>
+    <button id="buyAllAcolytes">Buy All</button><button id="buyAcolyte">Buy Acolyte</button>
+    </div>
+
+    <div class="unitBox">
+      <div>
+        Adventurers are come to your dungeon hoping to steal your treasure. The more treasure you have the more likely adventurers are to come and try to steal it, so make sure to guard it well with monsters.
+      </div>
+      <span id="adventurerCount"></span> adventurers have died in your dungeon.<br/>
+      You have hoarded <span id="treasureCount"></span> treasures.
+    </div>
   </body>
 </html>

@@ -42,5 +42,5 @@ module.exports = (grunt) ->
     }
   }
   # grunt.registerTask 'build', ['coffee', 'sass', 'haml']
-  grunt.registerTask 'build', ['coffee']
+  grunt.registerTask 'build', ['coffee', 'sass']
   grunt.registerTask 'default', ['build', 'watch']
