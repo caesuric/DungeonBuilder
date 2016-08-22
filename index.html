@@ -17,6 +17,8 @@
 
     <div class="unitBox">
       Minions dig additional rooms in your dungeon.<br/>
+      You can only have a population equal to 5x the number of rooms you have</br>
+      Population: <span id="population"></span>/<span id="maxPopulation"></span><br>
       You currently have <span id="minionCount"></span> minions.<br>
       <div class="progressOuter" id="roomProgress">
         <div class="progressInner" id="roomBar"> </div>
@@ -32,7 +34,7 @@
 
     <div class="unitBox">
       Monsters protect your dungeon, killing adventurers that enter.<br/>
-      You currently have <span id="monsterCount"></span> monsters.<br>
+      You currently have <span id="monsterCount"></span> monsters. Of these, <span id="monsterActiveCount"></span> are active.<br>
       <button id="buyAllMonsters">Buy All</button><button id="buyMonster">Buy Monster</button>
     </div>
 
@@ -43,7 +45,7 @@
       You currently have <span id="acolyteCount"></span> acolytes.<br>
     <button id="buyAllAcolytes">Buy All</button><button id="buyAcolyte">Buy Acolyte</button>
     </div>
-
+    
     <div class="unitBox">
       <div>
         Adventurers are come to your dungeon hoping to steal your treasure. The more treasure you have the more likely adventurers are to come and try to steal it, so make sure to guard it well with monsters.
@@ -51,5 +53,7 @@
       <span id="adventurerCount"></span> adventurers have died in your dungeon.<br/>
       You have hoarded <span id="treasureCount"></span> treasures.
     </div>
+    
+    <div id='narrationContainer' style="width: 512px; height: 300px; float: left; overflow: scroll;"></div></div>
   </body>
 </html>
