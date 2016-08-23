@@ -9,51 +9,56 @@
     <link href='css/style.css' rel='stylesheet' type='text/css'>
   </head>
   <body style='background-color: #FFFFFF;'>
-    <div class="unitBox">
-      Word of your dungeon has spread far and wide. Your reputation allows you to recruit minions, monsters and acolytes to improve your dungeon.<br/>
-      You currently have <span id="reputationCount"></span> reputation.</br>
-      You earn <span id="reputationRate"></span> reputation per second.
-    </div>
-
-    <div class="unitBox">
-      Minions dig additional rooms in your dungeon.<br/>
-      You can only have a population equal to 5x the number of rooms you have</br>
-      Population: <span id="population"></span>/<span id="maxPopulation"></span><br>
-      You currently have <span id="minionCount"></span> minions.<br>
-      <div class="progressOuter" id="roomProgress">
-        <div class="progressInner" id="roomBar"> </div>
-        <div class="progressDescription">
-          Excavation complete in <span id="roomETA"></span>
+    <div id="leftPanel" style="float:left;">
+        <div class="unitBox">
+          Word of your dungeon has spread far and wide. Your reputation allows you to recruit minions, monsters and acolytes to improve your dungeon.<br/>
+          You currently have <span id="reputationCount"></span> reputation.</br>
+          You earn <span id="reputationRate"></span> reputation per second.
         </div>
-      </div>
-      Your dungeon has <span id="roomCount"></span> rooms.<br/>
-      <button id="buyAllMinions">Buy All</button><button id="buyMinion">Buy Minion</button>
+
+        <div class="unitBox">
+          Minions dig additional rooms in your dungeon.<br/>
+          You can only have a population equal to 5x the number of rooms you have</br>
+          Population: <span id="population"></span>/<span id="maxPopulation"></span><br>
+          You currently have <span id="minionCount"></span> minions.<br>
+          <div class="progressOuter" id="roomProgress">
+            <div class="progressInner" id="roomBar"> </div>
+            <div class="progressDescription">
+              Excavation complete in <span id="roomETA"></span>
+            </div>
+          </div>
+          Your dungeon has <span id="roomCount"></span> rooms.<br/>
+          <button id="buyAllMinions">Buy All</button><button id="buyMinion">Buy Minion</button>
 
 
-    </div>
+        </div>
 
-    <div class="unitBox">
-      Monsters protect your dungeon, killing adventurers that enter.<br/>
-      You currently have <span id="monsterCount"></span> monsters. Of these, <span id="monsterActiveCount"></span> are active.<br>
-      <button id="buyAllMonsters">Buy All</button><button id="buyMonster">Buy Monster</button>
-    </div>
+        <div class="unitBox">
+          Monsters protect your dungeon, killing adventurers that enter.<br/>
+          You currently have <span id="monsterCount"></span> monsters. Of these, <span id="monsterActiveCount"></span> are active.<br>
+          <button id="buyAllMonsters">Buy All</button><button id="buyMonster">Buy Monster</button>
+        </div>
 
-    <div class="unitBox">
-      Acolytes go out and teach of your power, gaining you reputation.<br/>
-      Each acolyte earns you 100 reputation per second.<br/>
-      Your acolytes earn you <span id='acolyteReputationRate'></span> reputation per second.<br/>
-      You currently have <span id="acolyteCount"></span> acolytes.<br>
-    <button id="buyAllAcolytes">Buy All</button><button id="buyAcolyte">Buy Acolyte</button>
+        <div class="unitBox">
+          Acolytes go out and teach of your power, gaining you reputation.<br/>
+          Each acolyte earns you 100 reputation per second.<br/>
+          Your acolytes earn you <span id='acolyteReputationRate'></span> reputation per second.<br/>
+          You currently have <span id="acolyteCount"></span> acolytes.<br>
+        <button id="buyAllAcolytes">Buy All</button><button id="buyAcolyte">Buy Acolyte</button>
+        </div>
+        
+        <div class="unitBox">
+          <div>
+            Adventurers are come to your dungeon hoping to steal your treasure. The more treasure you have the more likely adventurers are to come and try to steal it, so make sure to guard it well with monsters.
+          </div>
+          <span id="adventurerCount"></span> adventurers have died in your dungeon.<br/>
+          You have hoarded <span id="treasureCount"></span> treasures.
+        </div>
+        
+        <div id='narrationContainer' style="width: 512px; height: 300px; float: left; overflow: scroll;"></div></div>
     </div>
-    
-    <div class="unitBox">
-      <div>
-        Adventurers are come to your dungeon hoping to steal your treasure. The more treasure you have the more likely adventurers are to come and try to steal it, so make sure to guard it well with monsters.
-      </div>
-      <span id="adventurerCount"></span> adventurers have died in your dungeon.<br/>
-      You have hoarded <span id="treasureCount"></span> treasures.
+    <div class="unitBox" id="roomsPanel" style="float:left;">
+        SAMPLE TEXT
     </div>
-    
-    <div id='narrationContainer' style="width: 512px; height: 300px; float: left; overflow: scroll;"></div></div>
   </body>
 </html>
