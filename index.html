@@ -19,8 +19,10 @@
         <div class="unitBox">
           Minions dig additional rooms in your dungeon.<br/>
           You can only have a population equal to 5x the number of rooms you have</br>
-          Population: <span id="population"></span>/<span id="maxPopulation"></span><br>
-          You currently have <span id="minionCount"></span> minions.<br>
+          Population: <span id="population"></span>/<span id="maxPopulation"></span><br/>
+          You currently have <span id="minionCount"></span> minions.<br/>
+          You currently have <span id="smallMinionCount"></span> small minions, who are 1/4 as effective<br/>
+          You currently have <span id="bigMinionCount"></span> big minions, who are 4x as effective<br/>
           <div class="progressOuter" id="roomProgress">
             <div class="progressInner" id="roomBar"> </div>
             <div class="progressDescription">
@@ -28,23 +30,31 @@
             </div>
           </div>
           Your dungeon has <span id="roomCount"></span> rooms.<br/>
-          <button id="buyAllMinions">Buy All</button><button id="buyMinion">Buy Minion</button>
-
-
+          <button id="buyAllSmallMinions">Buy All</button><button id="buySmallMinion">Buy Mini-on</button><button id="sellSmallMinion">Dismiss Mini-on</button><br/>
+          <button id="buyAllMinions">Buy All</button><button id="buyMinion">Buy Minion</button><button id="sellMinion">Dismiss Minion</button><br/>
+          <button id="buyAllBigMinions">Buy All</button><button id="buyBigMinion">Buy Big Minion</button><button id="sellBigMinion">Dismiss Big Minion</button>
         </div>
 
         <div class="unitBox">
           Monsters protect your dungeon, killing adventurers that enter.<br/>
           You currently have <span id="monsterCount"></span> monsters. Of these, <span id="monsterActiveCount"></span> are active.<br>
-          <button id="buyAllMonsters">Buy All</button><button id="buyMonster">Buy Monster</button>
+          You currently have <span id="smallMonsterCount"></span> small Monsters, who are 1/4 as effective<br/>
+          You currently have <span id="bigMonsterCount"></span> big Monsters, who are 4x as effective<br/>
+          <button id="buyAllSmallMonsters">Buy All</button><button id="buySmallMonster">Buy Small Monster</button><button id="sellSmallMonster">Dismiss Small Monster</button><br/>
+          <button id="buyAllMonsters">Buy All</button><button id="buyMonster">Buy Monster</button><button id="sellMonster">Dismiss Monster</button><br/>
+          <button id="buyAllBigMonsters">Buy All</button><button id="buyBigMonster">Buy Big Monster</button><button id="sellBigMonster">Dismiss Big Monster</button>
         </div>
 
         <div class="unitBox">
           Acolytes go out and teach of your power, gaining you reputation.<br/>
-          Each acolyte earns you 100 reputation per second.<br/>
+          Each acolyte earns you 10 reputation per second.<br/>
           Your acolytes earn you <span id='acolyteReputationRate'></span> reputation per second.<br/>
           You currently have <span id="acolyteCount"></span> acolytes.<br>
-        <button id="buyAllAcolytes">Buy All</button><button id="buyAcolyte">Buy Acolyte</button>
+          You currently have <span id="smallAcolyteCount"></span> small Acolytes, who are 1/4 as effective<br/>
+          You currently have <span id="bigAcolyteCount"></span> big Acolytes, who are 4x as effective<br/>
+        <button id="buyAllSmallAcolytes">Buy All</button><button id="buySmallAcolyte">Buy Small Acolyte</button><button id="sellSmallAcolyte">Dismiss Small Acolyte</button><br/>
+        <button id="buyAllAcolytes">Buy All</button><button id="buyAcolyte">Buy Acolyte</button><button id="sellAcolyte">Dismiss Acolyte</button><br/>
+        <button id="buyAllBigAcolytes">Buy All</button><button id="buyBigAcolyte">Buy Big Acolyte</button><button id="sellBigAcolyte">Dismiss Big Acolyte</button>
         </div>
         
         <div class="unitBox">
@@ -54,11 +64,16 @@
           <span id="adventurerCount"></span> adventurers have died in your dungeon.<br/>
           You have hoarded <span id="treasureCount"></span> treasures.
         </div>
-        
-        <div id='narrationContainer' style="width: 512px; height: 300px; float: left; overflow: scroll;"></div></div>
     </div>
     <div class="unitBox" id="roomsPanel" style="float:left;">
         SAMPLE TEXT
+    </div>
+    <div id='rightPanel' style="width: 512px; float: left;">
+    <div class="unitBox" id='upgradesPanel' style="width: 512px; float: top;">
+        <button id='upgradeMinions'>Upgrade Minions</button><br/>
+        <button id='upgradeAcolytes'>Upgrade Acolytes</button>
+    </div>
+    <div id='narrationContainer' style="width: 512px; height: 300px; float: top; overflow: scroll;"></div>
     </div>
   </body>
 </html>

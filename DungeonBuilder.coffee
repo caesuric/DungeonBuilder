@@ -1,11 +1,17 @@
 class Dungeon
     constructor: ->
         @minions = 5
+        @smallMinions = 0
+        @bigMinions = 0
         @monsters = 5
+        @smallMonsters = 0
+        @bigMonsters = 0
         @monsterObjects = []
         for i in [0..@monsters-1]
             @monsterObjects[i]=new Monster()
         @acolytes = 5
+        @smallAcolytes = 0
+        @bigAcolytes = 0
         @treasure = 10
 
         @roomProgress = 0
@@ -29,6 +35,10 @@ class Dungeon
         @adventurers = 0
         @reputation = 0
         @devMultiplier = 1
+        @minionMultiplier = 1
+        @acolyteMultiplier = 1
+        @minionUpgradeCost = Math.floor(15000*0.2)
+        @acolyteUpgradeCost = Math.floor(15000*0.2)
 
         @cost = 1500
 
@@ -38,6 +48,33 @@ class Dungeon
         $('#buyAllMinions').on 'click', @buyAllMinions
         $('#buyAllMonsters').on 'click', @buyAllMonsters
         $('#buyAllAcolytes').on 'click', @buyAllAcolytes
+        $('#sellMinion').on 'click', @sellMinion
+        $('#sellMonster').on 'click', @sellMonster
+        $('#sellAcolyte').on 'click', @sellAcolyte
+        
+        $('#buySmallMinion').on 'click', @buySmallMinion
+        $('#buyAllSmallMinions').on 'click', @buyAllSmallMinions
+        $('#sellSmallMinion').on 'click', @sellSmallMinion
+        $('#buyBigMinion').on 'click', @buyBigMinion
+        $('#buyAllBigMinions').on 'click', @buyAllBigMinions
+        $('#sellBigMinion').on 'click', @sellBigMinion
+        
+        $('#buySmallMonster').on 'click', @buySmallMonster
+        $('#buyAllSmallMonsters').on 'click', @buyAllSmallMonsters
+        $('#sellSmallMonster').on 'click', @sellSmallMonster
+        $('#buyBigMonster').on 'click', @buyBigMonster
+        $('#buyAllBigMonsters').on 'click', @buyAllBigMonsters
+        $('#sellBigMonster').on 'click', @sellBigMonster
+        
+        $('#buySmallAcolyte').on 'click', @buySmallAcolyte
+        $('#buyAllSmallAcolytes').on 'click', @buyAllSmallAcolytes
+        $('#sellSmallAcolyte').on 'click', @sellSmallAcolyte
+        $('#buyBigAcolyte').on 'click', @buyBigAcolyte
+        $('#buyAllBigAcolytes').on 'click', @buyAllBigAcolytes
+        $('#sellBigAcolyte').on 'click', @sellBigAcolyte
+        
+        $('#upgradeMinions').on 'click', @upgradeMinions
+        $('#upgradeAcolytes').on 'click', @upgradeAcolytes
     tick: =>
         @updateValues()
         @updateTreasureBox()
@@ -46,18 +83,19 @@ class Dungeon
         @updateAcolyteBox()
         @updateReputationBox()
         @updateRoomBox()
+        @updateUpgradeBox()
         for monster in @monsterObjects
             for i in [0..@devMultiplier-1]
                 monster.tick()
 
     updateValues: =>
-        @roomProgress += @minions * @devMultiplier
+        @roomProgress += ((@smallMinions/4)+@minions+(@bigMinions*4)) * @devMultiplier * @minionMultiplier
         if @roomProgress >= @roomCost()
             @roomProgress -= @roomCost()
             @rooms += 1
             @roomObjects[@rooms-1] = new Room()
 
-        @reputation += @acolytes * @devMultiplier
+        @reputation += ((@smallAcolytes/4)+@acolytes+(@bigAcolytes*4)) * @devMultiplier * @acolyteMultiplier
 
 
         for i in [0..Math.floor(@treasure*@devMultiplier)-1]
@@ -66,12 +104,16 @@ class Dungeon
                 @runDungeon()
 
     updateReputationBox: =>
-        $('#reputationCount').text @reputation
-        $('#reputationRate').text @acolytes*10
+        $('#reputationCount').text Math.floor(@reputation)
+        $('#reputationRate').text Math.floor(((@smallAcolytes*2.5)+(@acolytes*10)+(@bigAcolytes*40))*@acolyteMultiplier)
 
     updateMinionBox: =>
         $('#minionCount').text @minions
+        $('#smallMinionCount').text @smallMinions
+        $('#bigMinionCount').text @bigMinions
         $('#buyAllMinions').text "Buy All (#{@maxNumberToBuy @cost})"
+        $('#buyAllSmallMinions').text "Buy All (#{@maxNumberToBuy Math.floor(@cost/4)})"
+        $('#buyAllBigMinions').text "Buy All (#{@maxNumberToBuy Math.floor(@cost*2.8)})"
         $('#population').text @totalPopulation()
         $('#maxPopulation').text @maxPopulation()
 
@@ -83,13 +125,21 @@ class Dungeon
 
     updateMonsterBox: =>
         $('#monsterCount').text @monsters
+        $('#smallMonsterCount').text @smallMonsters
+        $('#bigMonsterCount').text @bigMonsters
         $('#monsterActiveCount').text @monstersActive()
         $('#buyAllMonsters').text "Buy All (#{@maxNumberToBuy @cost})"
+        $('#buyAllSmallMonsters').text "Buy All (#{@maxNumberToBuy Math.floor(@cost/4)})"
+        $('#buyAllBigMonsters').text "Buy All (#{@maxNumberToBuy Math.floor(@cost*2.8)})"
 
     updateAcolyteBox: =>
         $('#acolyteCount').text @acolytes
-        $('#acolyteReputationRate').text @acolytes*10
+        $('#smallAcolyteCount').text @smallAcolytes
+        $('#bigAcolyteCount').text @bigAcolytes
+        $('#acolyteReputationRate').text Math.floor(((@smallAcolytes*2.5)+(@acolytes*10)+(@bigAcolytes*40))*@acolyteMultiplier)
         $('#buyAllAcolytes').text "Buy All (#{@maxNumberToBuy @cost})"
+        $('#buyAllSmallAcolytes').text "Buy All (#{@maxNumberToBuy Math.floor(@cost/4)})"
+        $('#buyAllBigAcolytes').text "Buy All (#{@maxNumberToBuy Math.floor(@cost*2.8)})"
 
     updateTreasureBox: =>
         $('#adventurerCount').text @adventurers
@@ -104,16 +154,30 @@ class Dungeon
                 text += "nothing"
             else if room.occupantType == unitTypes.minion
                 text += "minions"
+            else if room.occupantType == unitTypes.smallMinion
+                text += "mini-ons"
+            else if room.occupantType == unitTypes.bigMinion
+                text += "big minions"
             else if room.occupantType == unitTypes.monster
                 text += "monsters"
+            else if room.occupantType == unitTypes.smallMonster
+                text += "small monsters"
+            else if room.occupantType == unitTypes.bigMonster
+                text += "big monsters"
             else if room.occupantType == unitTypes.acolyte
                 text += "acolytes"
+            else if room.occupantType == unitTypes.smallAcolyte
+                text += "small acolytes"
+            else if room.occupantType == unitTypes.bigAcolyte
+                text += "big acolytes"
             text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>"
         document.getElementById('roomsPanel').innerHTML = text
-    
+    updateUpgradeBox: =>
+        $('#upgradeMinions').text "Upgrade Minions (#{@minionUpgradeCost} reputation)"
+        $('#upgradeAcolytes').text "Upgrade Acolytes (#{@acolyteUpgradeCost} reputation)"
     setRoomETA: =>
         remaining = @roomCost() - @roomProgress
-        rate = @minions * @devMultiplier
+        rate = ((@smallMinions/4)+@minions+(@bigMinions*4)) * @devMultiplier * @minionMultiplier
         eta = Math.floor(remaining/rate)
         duration = moment.duration(eta*100) # Setting in milliseconds
         moment_time = duration.humanize()
@@ -133,16 +197,19 @@ class Dungeon
     roomCost: =>
         costToBuild = 12240
         if @rooms >= 100
-            costToBuild = 124711488
+            costToBuild = 1328065992
         else if @rooms >= 30
-            costToBuild = 124711488
+            costToBuild = 6324123
         else if @rooms >= 20
-            costToBuild = 124711488
+            costToBuild = 799632
         return costToBuild
     totalPopulation: =>
-        return @minions+@monsters+@acolytes
+        return @minions+@monsters+@acolytes+@smallMinions+@bigMinions+@smallMonsters+@bigMonsters+@smallAcolytes+@bigAcolytes
     maxPopulation: =>
-        return @rooms*5
+        count = 0
+        for room in @roomObjects
+            count += room.size
+        return count
     availablePopulation: =>
         return Math.max(@maxPopulation()-@totalPopulation(),0)
     monstersActive: =>
@@ -155,32 +222,150 @@ class Dungeon
     maxNumberToBuy: (cost) =>
       Math.min(Math.floor(@reputation/cost),@availablePopulation())
     buyMinion: =>
-        if @reputation>@cost and @totalPopulation()<@maxPopulation()
+        if @reputation>@cost #and @totalPopulation()<@maxPopulation()
             if @allocateRoom(unitTypes.minion)
                 @minions += 1
                 @reputation -= @cost
+    buySmallMinion: =>
+        smallCost = Math.floor(@cost/4)
+        if @reputation>smallCost
+            if @allocateRoom(unitTypes.smallMinion)
+                @smallMinions += 1
+                @reputation -= smallCost
+    buyBigMinion: =>
+        bigCost = Math.floor(@cost*2.8)
+        if @reputation>bigCost
+            if @allocateRoom(unitTypes.bigMinion)
+                @bigMinions += 1
+                @reputation -= bigCost
     buyMonster: =>
-        if @reputation>@cost and @totalPopulation()<@maxPopulation()
+        if @reputation>@cost #and @totalPopulation()<@maxPopulation()
             if @allocateRoom(unitTypes.monster)
                 @reputation -= @cost
                 @monsters += 1
+    buySmallMonster: =>
+        smallCost = Math.floor(@cost/4)
+        if @reputation>smallCost
+            if @allocateRoom(unitTypes.smallMonster)
+                @smallMonsters += 1
+                @reputation -= smallCost
+    buyBigMonster: =>
+        bigCost = Math.floor(@cost*2.8)
+        if @reputation>bigCost
+            if @allocateRoom(unitTypes.bigMonster)
+                @bigMonsters += 1
+                @reputation -= bigCost
     buyAcolyte: =>
-        if @reputation>@cost and @totalPopulation()<@maxPopulation()
+        if @reputation>@cost #and @totalPopulation()<@maxPopulation()
             if @allocateRoom(unitTypes.acolyte)
                 @reputation -= @cost
                 @acolytes += 1
+    buySmallAcolyte: =>
+        smallCost = Math.floor(@cost/4)
+        if @reputation>smallCost
+            if @allocateRoom(unitTypes.smallAcolyte)
+                @smallAcolytes += 1
+                @reputation -= smallCost
+    buyBigAcolyte: =>
+        bigCost = Math.floor(@cost*2.8)
+        if @reputation>bigCost
+            if @allocateRoom(unitTypes.bigAcolyte)
+                @bigAcolytes += 1
+                @reputation -= bigCost
     buyAllMinions: =>
         number = @maxNumberToBuy @cost
         for i in [0..number-1]
             @buyMinion()
+    buyAllSmallMinions: =>
+        number = @maxNumberToBuy Math.floor(@cost/4)
+        for i in [0..number-1]
+            @buySmallMinion()
+    buyAllBigMinions: =>
+        number = @maxNumberToBuy Math.floor(@cost*2.8)
+        for i in [0..number-1]
+            @buyBigMinion()
     buyAllMonsters: =>
         number = @maxNumberToBuy @cost
         for i in [0..number-1]
             @buyMonster()
+    buyAllSmallMonsters: =>
+        number = @maxNumberToBuy Math.floor(@cost/4)
+        for i in [0..number-1]
+            @buySmallMonster()
+    buyAllBigMonsters: =>
+        number = @maxNumberToBuy Math.floor(@cost*2.8)
+        for i in [0..number-1]
+            @buyBigMonster()
     buyAllAcolytes: =>
         number = @maxNumberToBuy @cost
         for i in [0..number-1]
             @buyAcolyte()
+    buyAllSmallAcolytes: =>
+        number = @maxNumberToBuy Math.floor(@cost/4)
+        for i in [0..number-1]
+            @buySmallAcolyte()
+    buyAllBigAcolytes: =>
+        number = @maxNumberToBuy Math.floor(@cost*2.8)
+        for i in [0..number-1]
+            @buyBigAcolyte()
+    sellMinion: =>
+        if @minions>1
+            @minions -= 1
+            @optimizeRemoval(unitTypes.minion)
+    sellSmallMinion: =>
+        if @smallMinions>0
+            @smallMinions -= 1
+            @optimizeRemoval(unitTypes.smallMinion)
+    sellBigMinion: =>
+        if @bigMinions>0
+            @bigMinions -= 1
+            @optimizeRemoval(unitTypes.bigMinion)
+    sellMonster: =>
+        if @monsters>0
+            @monsters -= 1
+            @optimizeRemoval(unitTypes.monster)
+    sellSmallMonster: =>
+        if @smallMonsters>0
+            @smallMonsters -= 1
+            @optimizeRemoval(unitTypes.smallMonster)
+    sellBigMonster: =>
+        if @bigMonsters>0
+            @bigMonsters -= 1
+            @optimizeRemoval(unitTypes.bigMonster)
+    sellAcolyte: =>
+        if @acolytes>1
+            @acolytes -= 1
+            @optimizeRemoval(unitTypes.acolyte)
+    sellSmallAcolyte: =>
+        if @smallAcolytes>0
+            @smallAcolytes -= 1
+            @optimizeRemoval(unitTypes.smallAcolyte)
+    sellBigAcolyte: =>
+        if @bigAcolytes>0
+            @bigAcolytes -= 1
+            @optimizeRemoval(unitTypes.bigAcolyte)
+    upgradeMinions: =>
+        if @reputation >= @minionUpgradeCost
+            @reputation -= @minionUpgradeCost
+            @minionMultiplier = @minionMultiplier*1.2
+            @minionUpgradeCost = Math.floor(@minionUpgradeCost*2*1.2)
+    upgradeAcolytes: =>
+        if @reputation >= @acolyteUpgradeCost
+            @reputation -= @acolyteUpgradeCost
+            @acolyteMultiplier = @acolyteMultiplier*1.2
+            @acolyteUpgradeCost = Math.floor(@acolyteUpgradeCost*2*1.2)
+    optimizeRemoval: (type) =>
+        roomSelected = null
+        for room in @roomObjects
+            if room.occupantType!=type
+                continue
+            if roomSelected==null and room.population > 0
+                roomSelected = room
+            else if room.population < roomSelected.population and room.population > 0
+                roomSelected = room
+        roomSelected.population -= 1
+        if roomSelected.population == 0
+            roomSelected.occupantType = unitTypes.none
     runDungeon: =>
         @narrate('An adventurer arrives!')
         adventurer = new Adventurer()
@@ -216,7 +401,7 @@ class Dungeon
                         @narrate('One of your monsters has been disabled by an adventurer.')
                 else if turnRoll==2
                     for monster in room.monsters
-                        adventurer.hp -= (Math.floor((Math.random() * 12) + 4 + monster.damage))
+                        adventurer.hp -= Math.max((Math.floor((Math.random() * 12) + 4 + monster.damage)),0)
                     turnRoll = 1
     anyMonstersActive: (room) =>
         for monster in room.monsters
@@ -245,7 +430,13 @@ class Dungeon
             if monster.isActive()
                 monster.xp += xp
                 monster.checkForLevelUp()
-        @narrate('Some of your monsters have slain the adventurer! You take their treasure!')
+        if room.occupantType == unitTypes.monster
+            type = "monsters"
+        else if room.occupantType == unitTypes.smallMonster
+            type = "small monsters"
+        else if room.occupantType == unitTypes.bigMonster
+            type = "big monsters"
+        @narrate('Some of your '+type+' have slain the adventurer! You take their treasure!')
     narrate: (text) =>
         document.getElementById('narrationContainer').innerHTML+='<br>'+text
         document.getElementById('narrationContainer').scrollTop = document.getElementById('narrationContainer').scrollHeight
@@ -255,17 +446,31 @@ class Dungeon
                 room.occupantType = type
                 room.population += 1
                 @addMonsterToRoom(room)
+                @adjustMaxPopulation(room)
                 return true
             else if room.occupantType == type and room.population < room.size
                 room.population += 1
                 @addMonsterToRoom(room)
+                @adjustMaxPopulation(room)
                 return true
         return false
     addMonsterToRoom: (room) =>
-        if room.occupantType == unitTypes.monster
-            monster = new Monster()
-            @monsterObjects[@monsters] = monster
-            room.monsters[room.population-1] = monster                    
+        if room.occupantType == unitTypes.monster or room.occupantType == unitTypes.smallMonster or room.occupantType == unitTypes.bigMonster
+            if room.occupantType == unitTypes.monster
+                monster = new Monster()
+            else if room.occupantType == unitTypes.smallMonster
+                monster = new SmallMonster()
+            else if room.occupantType == unitTypes.bigMonster
+                monster = new BigMonster()
+            @monsterObjects[@monsters+@smallMonsters+@bigMonsters] = monster
+            room.monsters[room.population-1] = monster
+    adjustMaxPopulation: (room) =>
+        if room.occupantType == unitTypes.smallMinion or room.occupantType == unitTypes.smallMonster or room.occupantType == unitTypes.smallAcolyte
+            room.size = 10
+        else if room.occupantType == unitTypes.bigMinion or room.occupantType == unitTypes.bigMonster or room.occupantType == unitTypes.bigAcolyte
+            room.size = 2
+        else
+            room.size = 5
 
 class Monster
     constructor: ->
@@ -308,6 +513,50 @@ class Monster
         @hp += 7
         @maxHp += 7
         @damage += 1
+class SmallMonster extends Monster
+    constructor: ->
+        super()
+        @hp = 4
+        @maxHp = 4
+        @damage = -7
+    tick: =>
+        if @health<@maxHealth
+            @health += 1
+            if @health==@maxHealth
+                @hp = @maxHp
+                window.simulator.narrate('One of your monsters has recovered.')
+        if @hp < @maxHp
+            roll = Math.floor((Math.random() * 640) + 1)
+            if roll==640
+                @hp += 1
+    levelUp: =>
+        @level += 1
+        window.simulator.narrate('One of your small monsters has attained level '+@level.toString()+'!')
+        @hp += 2
+        @maxHp += 2
+        @damage += 1
+class BigMonster extends Monster
+    constructor: ->
+        super()
+        @hp = 60
+        @maxHp = 60
+        @damage = 30
+    tick: =>
+        if @health<@maxHealth
+            @health += 1
+            if @health==@maxHealth
+                @hp = @maxHp
+                window.simulator.narrate('One of your monsters has recovered.')
+        if @hp < @maxHp
+            roll = Math.floor((Math.random() * 40) + 1)
+            if roll==40
+                @hp += 1
+    levelUp: =>
+        @level += 1
+        window.simulator.narrate('One of your big monsters has attained level '+@level.toString()+'!')
+        @hp += 7
+        @maxHp += 7
+        @damage += 1
 class Adventurer
     constructor: ->
         @hp = 13
@@ -322,6 +571,12 @@ unitTypes =
     minion: 0
     monster: 1
     acolyte: 2
+    smallMinion: 3
+    bigMinion: 4
+    smallMonster: 5
+    bigMonster: 6
+    smallAcolyte: 7
+    bigAcolyte: 8
         
         
 $ ->
