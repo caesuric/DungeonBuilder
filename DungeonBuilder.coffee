@@ -13,6 +13,10 @@ class Dungeon
         @smallAcolytes = 0
         @bigAcolytes = 0
         @treasure = 10
+        @initCanvas()
+        @map = new Map()
+        for i in [1..4]
+            @digRoom()
 
         @roomProgress = 0
         @rooms = 5
@@ -75,6 +79,17 @@ class Dungeon
         
         $('#upgradeMinions').on 'click', @upgradeMinions
         $('#upgradeAcolytes').on 'click', @upgradeAcolytes
+    initCanvas: =>
+        @viewSize = 512
+        mainCanvasContainer = document.getElementById('mainCanvasContainer')
+        mainCanvasContainer.style.width = @viewSize
+        mainCanvasContainer.style.height = @viewSize
+        @canvas = new fabric.Canvas('mainCanvas', {width: @viewSize, height: @viewSize})
+        @canvas.backgroundColor="black"
+        @canvas.selection = false
+        @canvas.stateful = false
+        @canvas.renderOnAddRemove = false
+        @canvas.renderAll()
     tick: =>
         @updateValues()
         @updateTreasureBox()
@@ -84,6 +99,7 @@ class Dungeon
         @updateReputationBox()
         @updateRoomBox()
         @updateUpgradeBox()
+        @updateRoomCanvas()
         for monster in @monsterObjects
             for i in [0..@devMultiplier-1]
                 monster.tick()
@@ -94,6 +110,7 @@ class Dungeon
             @roomProgress -= @roomCost()
             @rooms += 1
             @roomObjects[@rooms-1] = new Room()
+            @digRoom()
 
         @reputation += ((@smallAcolytes/4)+@acolytes+(@bigAcolytes*4)) * @devMultiplier * @acolyteMultiplier
 
@@ -193,6 +210,14 @@ class Dungeon
 
     updateProgressBar: (bar, percent) ->
       bar.width("#{percent}%")
+      
+    updateRoomCanvas: ->
+        @canvas.clear()
+        for i in [0..@map.sizeX-1]
+            for j in [0..@map.sizeY-1]
+                if @map.tiles[i][j]=='W'
+                    @canvas.add new fabric.Rect(left: (i*8), top: (j*8), height: 8, width: 8, stroke: 'gray', fill: 'gray', strokeWidth: 2, selectable: false)
+        @canvas.renderAll()
 
     roomCost: =>
         costToBuild = 12240
@@ -371,13 +396,11 @@ class Dungeon
         adventurer = new Adventurer()
         for room in @roomObjects
             if room.occupantType == unitTypes.monster
-                console.log(room)
                 if @encounterMonsters(adventurer,room)
                     return
         if @treasure>1
             @treasure -= 1
             @narrate('The adventurer has successfully beaten all of your monsters! They take one of your treasures!')
-            console.log("activemonsters: #{@monstersActive()}")
         else
             @narrate('The adventurer finds nothing and leaves.')
     encounterMonsters: (adventurer, room) =>
@@ -471,6 +494,28 @@ class Dungeon
             room.size = 2
         else
             room.size = 5
+    digRoom: =>
+        result = false
+        while result==false
+            [x,y,facing] = @pickRandomWall()
+            result = @map.excavate(x,y,facing)
+    pickRandomWall: =>
+        facing = null
+        while facing==null
+            x = Math.floor(Math.random()*(@map.sizeX-(@map.border*2)-1))+@map.border
+            y = Math.floor(Math.random()*(@map.sizeY-(@map.border*2)-1))+@map.border
+            facing = @checkForEmptySpace(x,y)
+        return [x,y,facing]
+    checkForEmptySpace: (x,y) =>
+        if @map.tiles[x][y+1]==' '
+            return 2
+        if @map.tiles[x-1][y]==' '
+            return 3
+        if @map.tiles[x][y-1]==' '
+            return 0
+        if @map.tiles[x+1][y]==' '
+            return 1
+        return null
 
 class Monster
     constructor: ->
@@ -566,6 +611,84 @@ class Room
         @size = 5
         @occupantType = unitTypes.none
         @monsters = []
+class Map
+    constructor: ->
+        @sizeX = 64
+        @sizeY = 64
+        @roomDimensions=5
+        @tiles = []
+        @border = 1
+        @initFillMap()
+        @digInitialRoom()
+    initFillMap: ->
+        for i in [0..@sizeX-1]
+            @tiles[i]=[]
+            for j in [0..@sizeY-1]
+                @tiles[i][j]='W'
+    digInitialRoom: ->
+        rollX = Math.floor((Math.random() * (@sizeX-(@border*2)-@roomDimensions)-1)+@border)
+        rollY = Math.floor((Math.random() * (@sizeY-(@border*2)-@roomDimensions)-1)+@border)
+        for i in [rollX..rollX+@roomDimensions-1]
+            for j in [rollY..rollY+@roomDimensions-1]
+                @tiles[i][j]=' '
+    excavate: (x,y,facing) ->
+        [xStep,yStep] = @determineStep(facing)
+        [xMax,yMax] = @determineBounds(x,y,xStep,yStep,facing)
+        for i in [x..xMax] by xStep
+            for j in [y..yMax] by yStep
+                if @tiles[i]==undefined
+                    return false
+                if @tiles[i][j]!='W'
+                    return false
+        [x,y]=@excavateDoor(x,y,xStep,yStep,facing)
+        for i in [x..xMax] by xStep
+            for j in [y..yMax] by yStep
+                @tiles[i][j]=' '
+        return true
+    excavateDoor: (x,y,xStep,yStep,facing) =>
+        valid = false
+        while valid==false
+            if facing==0 or facing==2
+                xDoor = Math.floor(Math.random()*5)+x
+                yDoor = y
+            else if facing==1 or facing==3
+                xDoor = x
+                yDoor = Math.floor(Math.random()*5)+y
+            valid = @checkOpenings(xDoor,yDoor)
+        @tiles[xDoor][yDoor]=' '
+        if facing==0 or facing==2
+            y += yStep
+        else if facing==1 or facing==3
+            x += xStep
+        return [x,y]
+    checkOpenings: (x,y) =>
+        count = 0
+        if @tiles[x-1][y]==' '
+            count +=1
+        if @tiles[x+1][y]==' '
+            count +=1
+        if @tiles[x][y-1]==' '
+            count +=1
+        if @tiles[x][y+1]==' '
+            count +=1
+        console.log(count)
+        if count==1
+            return true
+        return false
+    determineStep: (facing) =>
+        if facing==0
+            return [1,1]
+        if facing==1
+            return [-1,1]
+        if facing==2
+            return [1,-1]
+        if facing==3
+            return [1,1]
+    determineBounds: (x, y, xStep, yStep,facing) =>
+        if facing==0 or facing==2
+            return [x+(xStep*(@roomDimensions-1)),y+(yStep*(@roomDimensions))]
+        if facing==1 or facing==3
+            return [x+(xStep*(@roomDimensions)),y+(yStep*(@roomDimensions-1))]
 unitTypes =
     none: -1
     minion: 0
