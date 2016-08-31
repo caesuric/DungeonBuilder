@@ -24,7 +24,7 @@
     }
   };
 
-  app = angular.module('dungeonBuilder', []);
+  app = angular.module('dungeonBuilder', ['ui.bootstrap']);
 
   app.service('dungeon', Dungeon = (function() {
     function Dungeon($rootScope) {
@@ -75,13 +75,20 @@
       this.maxNumberToBuy = bind(this.maxNumberToBuy, this);
       this.monstersActive = bind(this.monstersActive, this);
       this.availablePopulation = bind(this.availablePopulation, this);
+      this.emptyRooms = bind(this.emptyRooms, this);
       this.maxPopulation = bind(this.maxPopulation, this);
       this.totalPopulation = bind(this.totalPopulation, this);
       this.roomCost = bind(this.roomCost, this);
+      this.bigUnitETA = bind(this.bigUnitETA, this);
+      this.smallUnitETA = bind(this.smallUnitETA, this);
+      this.unitETA = bind(this.unitETA, this);
       this.roomETA = bind(this.roomETA, this);
       this.upgradeAcolytesText = bind(this.upgradeAcolytesText, this);
       this.upgradeMinionsText = bind(this.upgradeMinionsText, this);
       this.updateRoomBox = bind(this.updateRoomBox, this);
+      this.bigUnitProgressPercent = bind(this.bigUnitProgressPercent, this);
+      this.smallUnitProgressPercent = bind(this.smallUnitProgressPercent, this);
+      this.unitProgressPercent = bind(this.unitProgressPercent, this);
       this.roomProgressPercent = bind(this.roomProgressPercent, this);
       this.reputationRate = bind(this.reputationRate, this);
       this.updateValues = bind(this.updateValues, this);
@@ -186,6 +193,27 @@
       return (this.roomProgress / this.roomCost() * 100).toString();
     };
 
+    Dungeon.prototype.unitProgressPercent = function() {
+      if (this.reputation > this.cost && this.reputationRate() > this.cost) {
+        return '100';
+      }
+      return ((this.reputation % this.cost) / this.cost * 100).toString();
+    };
+
+    Dungeon.prototype.smallUnitProgressPercent = function() {
+      if (this.reputation > Math.floor(this.cost / 4) && this.reputationRate() > Math.floor(this.cost / 4)) {
+        return '100';
+      }
+      return ((this.reputation % Math.floor(this.cost / 4)) / Math.floor(this.cost / 4) * 100).toString();
+    };
+
+    Dungeon.prototype.bigUnitProgressPercent = function() {
+      if (this.reputation > Math.floor(this.cost * 2.8) && this.reputationRate() > Math.floor(this.cost * 2.8)) {
+        return '100';
+      }
+      return ((this.reputation % Math.floor(this.cost * 2.8)) / Math.floor(this.cost * 2.8) * 100).toString();
+    };
+
     Dungeon.prototype.updateRoomBox = function() {
       var i, k, ref, room, text;
       text = "Room Summary:<br><br>";
@@ -235,22 +263,109 @@
       moment_time = duration.humanize();
       specific = "";
       if (duration.years() > 0) {
-        specific += (duration.years()) + " years ";
+        specific += (duration.years()) + "y";
       }
       if (duration.months() > 0) {
-        specific += (duration.months()) + " months ";
+        specific += (duration.months()) + "M";
       }
       if (duration.days() > 0) {
-        specific += (duration.days()) + " days ";
+        specific += (duration.days()) + "d";
       }
       if (duration.hours() > 0) {
-        specific += (duration.hours()) + " hours ";
+        specific += (duration.hours()) + "h";
       }
       if (duration.minutes() > 0) {
-        specific += (duration.minutes()) + " minutes ";
+        specific += (duration.minutes()) + "m";
       }
       if (duration.seconds() > 0) {
-        specific += (duration.seconds()) + " seconds ";
+        specific += (duration.seconds()) + "s";
+      }
+      return specific;
+    };
+
+    Dungeon.prototype.unitETA = function() {
+      var duration, eta, moment_time, rate, remaining, specific;
+      remaining = this.cost - (this.reputation % this.cost);
+      rate = ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
+      eta = Math.floor(remaining / rate);
+      duration = moment.duration(eta * 100);
+      moment_time = duration.humanize();
+      specific = "";
+      if (duration.years() > 0) {
+        specific += (duration.years()) + "y";
+      }
+      if (duration.months() > 0) {
+        specific += (duration.months()) + "M";
+      }
+      if (duration.days() > 0) {
+        specific += (duration.days()) + "d";
+      }
+      if (duration.hours() > 0) {
+        specific += (duration.hours()) + "h";
+      }
+      if (duration.minutes() > 0) {
+        specific += (duration.minutes()) + "m";
+      }
+      if (duration.seconds() > 0) {
+        specific += (duration.seconds()) + "s";
+      }
+      return specific;
+    };
+
+    Dungeon.prototype.smallUnitETA = function() {
+      var duration, eta, moment_time, rate, remaining, specific;
+      remaining = Math.floor(this.cost / 4) - (this.reputation % Math.floor(this.cost / 4));
+      rate = ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
+      eta = Math.floor(remaining / rate);
+      duration = moment.duration(eta * 100);
+      moment_time = duration.humanize();
+      specific = "";
+      if (duration.years() > 0) {
+        specific += (duration.years()) + "y";
+      }
+      if (duration.months() > 0) {
+        specific += (duration.months()) + "M";
+      }
+      if (duration.days() > 0) {
+        specific += (duration.days()) + "d";
+      }
+      if (duration.hours() > 0) {
+        specific += (duration.hours()) + "h";
+      }
+      if (duration.minutes() > 0) {
+        specific += (duration.minutes()) + "m";
+      }
+      if (duration.seconds() > 0) {
+        specific += (duration.seconds()) + "s";
+      }
+      return specific;
+    };
+
+    Dungeon.prototype.bigUnitETA = function() {
+      var duration, eta, moment_time, rate, remaining, specific;
+      remaining = Math.floor(this.cost * 2.8) - (this.reputation % Math.floor(this.cost * 2.8));
+      rate = ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
+      eta = Math.floor(remaining / rate);
+      duration = moment.duration(eta * 100);
+      moment_time = duration.humanize();
+      specific = "";
+      if (duration.years() > 0) {
+        specific += (duration.years()) + "y";
+      }
+      if (duration.months() > 0) {
+        specific += (duration.months()) + "M";
+      }
+      if (duration.days() > 0) {
+        specific += (duration.days()) + "d";
+      }
+      if (duration.hours() > 0) {
+        specific += (duration.hours()) + "h";
+      }
+      if (duration.minutes() > 0) {
+        specific += (duration.minutes()) + "m";
+      }
+      if (duration.seconds() > 0) {
+        specific += (duration.seconds()) + "s";
       }
       return specific;
     };
@@ -295,16 +410,26 @@
     };
 
     Dungeon.prototype.totalPopulation = function() {
-      return this.minions + this.monsters + this.acolytes + this.smallMinions + this.bigMinions + this.smallMonsters + this.bigMonsters + this.smallAcolytes + this.bigAcolytes;
+      var bigUnits, normalUnits, smallUnits;
+      smallUnits = this.smallMinions + this.smallMonsters + this.smallAcolytes;
+      normalUnits = this.minions + this.monsters + this.acolytes;
+      bigUnits = this.bigMinions + this.bigMonsters + this.bigAcolytes;
+      return (smallUnits * 5) + (normalUnits * 10) + (bigUnits * 25);
     };
 
     Dungeon.prototype.maxPopulation = function() {
+      return this.rooms * 50;
+    };
+
+    Dungeon.prototype.emptyRooms = function() {
       var count, k, len, ref, room;
       count = 0;
       ref = this.roomObjects;
       for (k = 0, len = ref.length; k < len; k++) {
         room = ref[k];
-        count += room.size;
+        if (room.population === 0) {
+          count += 1;
+        }
       }
       return count;
     };
@@ -845,8 +970,19 @@
     $scope.population = 0;
     $scope.maxPopulation = 0;
     $scope.roomProgressPercent = 0;
+    $scope.roomProgressPercentRounded = 0;
+    $scope.unitProgressPercent = 0;
+    $scope.unitProgressPercentRounded = 0;
+    $scope.smallUnitProgressPercent = 0;
+    $scope.smallUnitProgressPercentRounded = 0;
+    $scope.bigUnitProgressPercent = 0;
+    $scope.bigUnitProgressPercentRounded = 0;
     $scope.rooms = 0;
+    $scope.alerts = [];
     $scope.roomETA = "";
+    $scope.unitETA = "";
+    $scope.smallUnitETA = "";
+    $scope.bigUnitETA = "";
     $scope.monsters = 0;
     $scope.smallMonsters = 0;
     $scope.bigMonsters = 0;
@@ -864,6 +1000,7 @@
     $scope.treasure = 0;
     $scope.upgradeMinionsText = "";
     $scope.upgradeAcolytesText = "";
+    $scope.emptyRooms = 0;
     $scope.$watch('dungeon.reputation', function(newVal) {
       $scope.reputation = Math.floor(newVal);
       $scope.buyAllMinionsText = "Buy All (" + (dungeon.maxNumberToBuy(dungeon.cost)) + ")";
@@ -895,13 +1032,41 @@
       return $scope.maxPopulation = newVal;
     });
     $scope.$watch('dungeon.roomProgressPercent()', function(newVal) {
-      return $scope.roomProgressPercent = newVal;
+      $scope.roomProgressPercent = newVal;
+      return $scope.roomProgressPercentRounded = Math.floor(newVal);
+    });
+    $scope.$watch('dungeon.unitProgressPercent()', function(newVal) {
+      $scope.unitProgressPercent = newVal;
+      return $scope.unitProgressPercentRounded = Math.floor(newVal);
+    });
+    $scope.$watch('dungeon.smallUnitProgressPercent()', function(newVal) {
+      $scope.smallUnitProgressPercent = newVal;
+      return $scope.smallUnitProgressPercentRounded = Math.floor(newVal);
+    });
+    $scope.$watch('dungeon.bigUnitProgressPercent()', function(newVal) {
+      $scope.bigUnitProgressPercent = newVal;
+      return $scope.bigUnitProgressPercentRounded = Math.floor(newVal);
     });
     $scope.$watch('dungeon.rooms', function(newVal) {
-      return $scope.rooms = newVal;
+      $scope.rooms = newVal;
+      if ($scope.rooms > 5) {
+        return $scope.alerts.push({
+          type: 'success',
+          msg: 'Room constructed!'
+        });
+      }
     });
     $scope.$watch('dungeon.roomETA()', function(newVal) {
       return $scope.roomETA = newVal;
+    });
+    $scope.$watch('dungeon.unitETA()', function(newVal) {
+      return $scope.unitETA = newVal;
+    });
+    $scope.$watch('dungeon.smallUnitETA()', function(newVal) {
+      return $scope.smallUnitETA = newVal;
+    });
+    $scope.$watch('dungeon.bigUnitETA()', function(newVal) {
+      return $scope.bigUnitETA = newVal;
     });
     $scope.$watch('dungeon.monsters', function(newVal) {
       return $scope.monsters = newVal;
@@ -933,56 +1098,14 @@
     $scope.$watch('dungeon.upgradeMinionsText()', function(newVal) {
       return $scope.upgradeMinionsText = newVal;
     });
-    return $scope.$watch('dungeon.upgradeAcolytesText()', function(newVal) {
+    $scope.$watch('dungeon.upgradeAcolytesText()', function(newVal) {
       return $scope.upgradeAcolytesText = newVal;
     });
-  });
-
-  app.directive('tab', function() {
-    return {
-      restrict: 'E',
-      transclude: true,
-      template: '<div role="tabpanel" class="tabContents" ng-show="active" ng-transclude></div>',
-      require: '^tabset',
-      scope: {
-        heading: '@'
-      },
-      link: function(scope, elem, attr, tabsetCtrl) {
-        scope.active = false;
-        console.log(tabsetCtrl);
-        return tabsetCtrl.addTab(scope);
-      }
-    };
-  });
-
-  app.directive('tabset', function() {
-    return {
-      restrict: 'E',
-      transclude: true,
-      scope: {},
-      templateUrl: 'tabset.html',
-      bindToController: true,
-      controllerAs: 'tabset',
-      controller: function() {
-        this.tabs = [];
-        this.addTab = function(tab) {
-          this.tabs.push(tab);
-          if (this.tabs.length === 1) {
-            tab.active = true;
-          }
-        };
-        this.select = function(selectedTab) {
-          var k, len, ref, tab;
-          ref = this.tabs;
-          for (k = 0, len = ref.length; k < len; k++) {
-            tab = ref[k];
-            if (tab.active && tab !== selectedTab) {
-              tab.active = false;
-            }
-          }
-          selectedTab.active = true;
-        };
-      }
+    $scope.$watch('dungeon.emptyRooms()', function(newVal) {
+      return $scope.emptyRooms = newVal;
+    });
+    return $scope.closeAlert = function(index) {
+      return $scope.alerts.splice(index, 1);
     };
   });
 

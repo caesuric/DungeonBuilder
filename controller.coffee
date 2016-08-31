@@ -11,7 +11,7 @@ CanvasInitializer =
         window.canvas.renderOnAddRemove = false
         window.canvas.renderAll()
 
-app = angular.module('dungeonBuilder', [])
+app = angular.module('dungeonBuilder', ['ui.bootstrap'])
 app.service 'dungeon', class Dungeon
     constructor: ($rootScope) ->
         @rootScope = $rootScope
@@ -94,6 +94,18 @@ app.service 'dungeon', class Dungeon
         return Math.floor(((@smallAcolytes*2.5)+(@acolytes*10)+(@bigAcolytes*40))*@acolyteMultiplier)
     roomProgressPercent: =>
         return (@roomProgress/@roomCost()*100).toString()
+    unitProgressPercent: =>
+        if @reputation > @cost and @reputationRate() > @cost
+            return '100'
+        return ((@reputation % @cost)/@cost*100).toString()
+    smallUnitProgressPercent: =>
+        if @reputation > Math.floor(@cost/4) and @reputationRate() > Math.floor(@cost/4)
+            return '100'
+        return ((@reputation % Math.floor(@cost/4))/Math.floor(@cost/4)*100).toString()
+    bigUnitProgressPercent: =>
+        if @reputation > Math.floor(@cost*2.8) and @reputationRate() > Math.floor(@cost*2.8)
+            return '100'
+        return ((@reputation % Math.floor(@cost*2.8))/Math.floor(@cost*2.8)*100).toString()
 
     updateRoomBox: =>
         text = "Room Summary:<br><br>"
@@ -133,14 +145,57 @@ app.service 'dungeon', class Dungeon
         duration = moment.duration(eta*100) # Setting in milliseconds
         moment_time = duration.humanize()
         specific = ""
-        specific += "#{duration.years()} years " if duration.years() > 0
-        specific += "#{duration.months()} months " if duration.months() > 0
-        specific += "#{duration.days()} days " if duration.days() > 0
-        specific += "#{duration.hours()} hours " if duration.hours() > 0
-        specific += "#{duration.minutes()} minutes " if duration.minutes() > 0
-        specific += "#{duration.seconds()} seconds " if duration.seconds() > 0
+        specific += "#{duration.years()}y" if duration.years() > 0
+        specific += "#{duration.months()}M" if duration.months() > 0
+        specific += "#{duration.days()}d" if duration.days() > 0
+        specific += "#{duration.hours()}h" if duration.hours() > 0
+        specific += "#{duration.minutes()}m" if duration.minutes() > 0
+        specific += "#{duration.seconds()}s" if duration.seconds() > 0
+        return specific
+    unitETA: =>
+        remaining = @cost - (@reputation % @cost)
+        rate = ((@smallAcolytes/4)+@acolytes+(@bigAcolytes*4)) * @devMultiplier * @acolyteMultiplier
+        eta = Math.floor(remaining/rate)
+        duration = moment.duration(eta*100) # Setting in milliseconds
+        moment_time = duration.humanize()
+        specific = ""
+        specific += "#{duration.years()}y" if duration.years() > 0
+        specific += "#{duration.months()}M" if duration.months() > 0
+        specific += "#{duration.days()}d" if duration.days() > 0
+        specific += "#{duration.hours()}h" if duration.hours() > 0
+        specific += "#{duration.minutes()}m" if duration.minutes() > 0
+        specific += "#{duration.seconds()}s" if duration.seconds() > 0
+        return specific
+    smallUnitETA: =>
+        remaining = Math.floor(@cost/4) - (@reputation % Math.floor(@cost/4))
+        rate = ((@smallAcolytes/4)+@acolytes+(@bigAcolytes*4)) * @devMultiplier * @acolyteMultiplier
+        eta = Math.floor(remaining/rate)
+        duration = moment.duration(eta*100) # Setting in milliseconds
+        moment_time = duration.humanize()
+        specific = ""
+        specific += "#{duration.years()}y" if duration.years() > 0
+        specific += "#{duration.months()}M" if duration.months() > 0
+        specific += "#{duration.days()}d" if duration.days() > 0
+        specific += "#{duration.hours()}h" if duration.hours() > 0
+        specific += "#{duration.minutes()}m" if duration.minutes() > 0
+        specific += "#{duration.seconds()}s" if duration.seconds() > 0
+        return specific
+    bigUnitETA: =>
+        remaining = Math.floor(@cost*2.8) - (@reputation % Math.floor(@cost*2.8))
+        rate = ((@smallAcolytes/4)+@acolytes+(@bigAcolytes*4)) * @devMultiplier * @acolyteMultiplier
+        eta = Math.floor(remaining/rate)
+        duration = moment.duration(eta*100) # Setting in milliseconds
+        moment_time = duration.humanize()
+        specific = ""
+        specific += "#{duration.years()}y" if duration.years() > 0
+        specific += "#{duration.months()}M" if duration.months() > 0
+        specific += "#{duration.days()}d" if duration.days() > 0
+        specific += "#{duration.hours()}h" if duration.hours() > 0
+        specific += "#{duration.minutes()}m" if duration.minutes() > 0
+        specific += "#{duration.seconds()}s" if duration.seconds() > 0
         return specific
 
+        
     updateProgressBar: (bar, percent) ->
       bar.width("#{percent}%")
       
@@ -162,11 +217,22 @@ app.service 'dungeon', class Dungeon
             costToBuild = 799632
         return costToBuild
     totalPopulation: =>
-        return @minions+@monsters+@acolytes+@smallMinions+@bigMinions+@smallMonsters+@bigMonsters+@smallAcolytes+@bigAcolytes
+        smallUnits = @smallMinions+@smallMonsters+@smallAcolytes
+        normalUnits = @minions+@monsters+@acolytes
+        bigUnits = @bigMinions+@bigMonsters+@bigAcolytes
+        return (smallUnits*5)+(normalUnits*10)+(bigUnits*25)
+        # return @minions+@monsters+@acolytes+@smallMinions+@bigMinions+@smallMonsters+@bigMonsters+@smallAcolytes+@bigAcolytes
     maxPopulation: =>
+        # count = 0
+        # for room in @roomObjects
+            # count += room.size
+        # return count
+        return @rooms * 50
+    emptyRooms: =>
         count = 0
         for room in @roomObjects
-            count += room.size
+            if room.population == 0
+                count += 1
         return count
     availablePopulation: =>
         return Math.max(@maxPopulation()-@totalPopulation(),0)
@@ -463,8 +529,19 @@ app.controller 'main', ($scope, dungeon) ->
     $scope.population = 0
     $scope.maxPopulation = 0
     $scope.roomProgressPercent = 0
+    $scope.roomProgressPercentRounded = 0
+    $scope.unitProgressPercent = 0
+    $scope.unitProgressPercentRounded = 0
+    $scope.smallUnitProgressPercent = 0
+    $scope.smallUnitProgressPercentRounded = 0
+    $scope.bigUnitProgressPercent = 0
+    $scope.bigUnitProgressPercentRounded = 0
     $scope.rooms = 0
+    $scope.alerts = []
     $scope.roomETA = ""
+    $scope.unitETA = ""
+    $scope.smallUnitETA = ""
+    $scope.bigUnitETA = ""
     $scope.monsters = 0
     $scope.smallMonsters = 0
     $scope.bigMonsters = 0
@@ -482,6 +559,7 @@ app.controller 'main', ($scope, dungeon) ->
     $scope.treasure = 0
     $scope.upgradeMinionsText = ""
     $scope.upgradeAcolytesText = ""
+    $scope.emptyRooms = 0
     $scope.$watch 'dungeon.reputation', (newVal) ->
         $scope.reputation = Math.floor(newVal)
         $scope.buyAllMinionsText = "Buy All (#{dungeon.maxNumberToBuy dungeon.cost})"
@@ -507,10 +585,28 @@ app.controller 'main', ($scope, dungeon) ->
         $scope.maxPopulation = newVal
     $scope.$watch 'dungeon.roomProgressPercent()', (newVal) ->
         $scope.roomProgressPercent = newVal
+        $scope.roomProgressPercentRounded = Math.floor(newVal)
+    $scope.$watch 'dungeon.unitProgressPercent()', (newVal) ->
+        $scope.unitProgressPercent = newVal
+        $scope.unitProgressPercentRounded = Math.floor(newVal)
+    $scope.$watch 'dungeon.smallUnitProgressPercent()', (newVal) ->
+        $scope.smallUnitProgressPercent = newVal
+        $scope.smallUnitProgressPercentRounded = Math.floor(newVal)
+    $scope.$watch 'dungeon.bigUnitProgressPercent()', (newVal) ->
+        $scope.bigUnitProgressPercent = newVal
+        $scope.bigUnitProgressPercentRounded = Math.floor(newVal)
     $scope.$watch 'dungeon.rooms', (newVal) ->
         $scope.rooms = newVal
+        if $scope.rooms > 5
+            $scope.alerts.push({type: 'success', msg: 'Room constructed!'})
     $scope.$watch 'dungeon.roomETA()', (newVal) ->
         $scope.roomETA = newVal
+    $scope.$watch 'dungeon.unitETA()', (newVal) ->
+        $scope.unitETA = newVal
+    $scope.$watch 'dungeon.smallUnitETA()', (newVal) ->
+        $scope.smallUnitETA = newVal
+    $scope.$watch 'dungeon.bigUnitETA()', (newVal) ->
+        $scope.bigUnitETA = newVal
     $scope.$watch 'dungeon.monsters', (newVal) ->
         $scope.monsters = newVal
     $scope.$watch 'dungeon.smallMonsters', (newVal) ->
@@ -533,42 +629,46 @@ app.controller 'main', ($scope, dungeon) ->
         $scope.upgradeMinionsText = newVal
     $scope.$watch 'dungeon.upgradeAcolytesText()', (newVal) ->
         $scope.upgradeAcolytesText = newVal
+    $scope.$watch 'dungeon.emptyRooms()', (newVal) ->
+        $scope.emptyRooms = newVal
+    $scope.closeAlert = (index) ->
+        $scope.alerts.splice(index,1)
 
-app.directive 'tab', ->
-    {
-        restrict: 'E'
-        transclude: true
-        template: '<div role="tabpanel" class="tabContents" ng-show="active" ng-transclude></div>'
-        require: '^tabset'
-        scope: { heading: '@' }
-        link: (scope, elem, attr, tabsetCtrl) ->
-            scope.active = false
-            console.log(tabsetCtrl)
-            tabsetCtrl.addTab(scope)
-    }
-app.directive 'tabset', ->
-    {
-        restrict: 'E'
-        transclude: true
-        scope: {}
-        templateUrl: 'tabset.html'
-        bindToController: true
-        controllerAs: 'tabset'
-        controller: ->
-            @tabs = []
-            @addTab = (tab) ->
-                @tabs.push tab
-                if @tabs.length == 1
-                    tab.active = true
-                return
-            @select = (selectedTab) ->
-                for tab in @tabs
-                    if tab.active  and tab != selectedTab
-                        tab.active = false
-                selectedTab.active = true
-                return
-            return
-    }
+# app.directive 'tab', ->
+    # {
+        # restrict: 'E'
+        # transclude: true
+        # template: '<div role="tabpanel" class="tabContents" ng-show="active" ng-transclude></div>'
+        # require: '^tabset'
+        # scope: { heading: '@' }
+        # link: (scope, elem, attr, tabsetCtrl) ->
+            # scope.active = false
+            # console.log(tabsetCtrl)
+            # tabsetCtrl.addTab(scope)
+    # }
+# app.directive 'tabset', ->
+    # {
+        # restrict: 'E'
+        # transclude: true
+        # scope: {}
+        # templateUrl: 'tabset.html'
+        # bindToController: true
+        # controllerAs: 'tabset'
+        # controller: ->
+            # @tabs = []
+            # @addTab = (tab) ->
+                # @tabs.push tab
+                # if @tabs.length == 1
+                    # tab.active = true
+                # return
+            # @select = (selectedTab) ->
+                # for tab in @tabs
+                    # if tab.active  and tab != selectedTab
+                        # tab.active = false
+                # selectedTab.active = true
+                # return
+            # return
+    # }
 
 class Monster
     constructor: ->
