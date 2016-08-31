@@ -1,3 +1,16 @@
+CanvasInitializer =
+    initCanvas: ->
+        window.viewSize = 512
+        mainCanvasContainer = document.getElementById('mainCanvasContainer')
+        mainCanvasContainer.style.width = @viewSize
+        mainCanvasContainer.style.height = @viewSize
+        window.canvas = new fabric.Canvas('mainCanvas', {width: @viewSize, height: @viewSize})
+        window.canvas.backgroundColor="black"
+        window.canvas.selection = false
+        window.canvas.stateful = false
+        window.canvas.renderOnAddRemove = false
+        window.canvas.renderAll()
+
 app = angular.module('dungeonBuilder', [])
 app.service 'dungeon', class Dungeon
     constructor: ($rootScope) ->
@@ -15,7 +28,10 @@ app.service 'dungeon', class Dungeon
         @smallAcolytes = 0
         @bigAcolytes = 0
         @treasure = 10
-        @initCanvas()
+        $(document).ready( ->
+            CanvasInitializer.initCanvas()
+        )
+            
         @map = new Map()
         for i in [1..4]
             @digRoom()
@@ -49,17 +65,6 @@ app.service 'dungeon', class Dungeon
         @cost = 1500
 
         setInterval(@tick,100)
-    initCanvas: =>
-        @viewSize = 512
-        mainCanvasContainer = document.getElementById('mainCanvasContainer')
-        mainCanvasContainer.style.width = @viewSize
-        mainCanvasContainer.style.height = @viewSize
-        @canvas = new fabric.Canvas('mainCanvas', {width: @viewSize, height: @viewSize})
-        @canvas.backgroundColor="black"
-        @canvas.selection = false
-        @canvas.stateful = false
-        @canvas.renderOnAddRemove = false
-        @canvas.renderAll()
     tick: =>
         @updateValues()
         @updateRoomBox()
@@ -140,12 +145,12 @@ app.service 'dungeon', class Dungeon
       bar.width("#{percent}%")
       
     updateRoomCanvas: ->
-        @canvas.clear()
+        window.canvas.clear()
         for i in [0..@map.sizeX-1]
             for j in [0..@map.sizeY-1]
                 if @map.tiles[i][j]=='W'
-                    @canvas.add new fabric.Rect(left: (i*8), top: (j*8), height: 8, width: 8, stroke: 'gray', fill: 'gray', strokeWidth: 2, selectable: false)
-        @canvas.renderAll()
+                    window.canvas.add new fabric.Rect(left: (i*8), top: (j*8), height: 8, width: 8, stroke: 'gray', fill: 'gray', strokeWidth: 2, selectable: false)
+        window.canvas.renderAll()
 
     roomCost: =>
         costToBuild = 12240
@@ -529,8 +534,41 @@ app.controller 'main', ($scope, dungeon) ->
     $scope.$watch 'dungeon.upgradeAcolytesText()', (newVal) ->
         $scope.upgradeAcolytesText = newVal
 
-
-
+app.directive 'tab', ->
+    {
+        restrict: 'E'
+        transclude: true
+        template: '<div role="tabpanel" class="tabContents" ng-show="active" ng-transclude></div>'
+        require: '^tabset'
+        scope: { heading: '@' }
+        link: (scope, elem, attr, tabsetCtrl) ->
+            scope.active = false
+            console.log(tabsetCtrl)
+            tabsetCtrl.addTab(scope)
+    }
+app.directive 'tabset', ->
+    {
+        restrict: 'E'
+        transclude: true
+        scope: {}
+        templateUrl: 'tabset.html'
+        bindToController: true
+        controllerAs: 'tabset'
+        controller: ->
+            @tabs = []
+            @addTab = (tab) ->
+                @tabs.push tab
+                if @tabs.length == 1
+                    tab.active = true
+                return
+            @select = (selectedTab) ->
+                for tab in @tabs
+                    if tab.active  and tab != selectedTab
+                        tab.active = false
+                selectedTab.active = true
+                return
+            return
+    }
 
 class Monster
     constructor: ->
@@ -715,5 +753,3 @@ unitTypes =
     bigMonster: 6
     smallAcolyte: 7
     bigAcolyte: 8
-        
-        

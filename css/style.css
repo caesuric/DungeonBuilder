@@ -20,5 +20,27 @@
 
 .progressDescription {
   position: absolute; }
+  
+.tabset>li {
+    position: relative;
+    display: block
+}
 
+.tabset>li>a {
+    position: relative;
+    display: block;
+    padding: 10px 15px
+}
+
+.tabset>li {
+    float: left;
+}    
+
+.tabset>li.active>a {
+    color: #555;
+    cursor: default;
+    background-color: #fff;
+    border: 1px solid #ddd;
+}
+ 
 /*# sourceMappingURL=style.css.map */
