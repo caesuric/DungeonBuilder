@@ -79,6 +79,8 @@
       this.maxPopulation = bind(this.maxPopulation, this);
       this.totalPopulation = bind(this.totalPopulation, this);
       this.roomCost = bind(this.roomCost, this);
+      this.acolyteUpgradeETA = bind(this.acolyteUpgradeETA, this);
+      this.minionUpgradeETA = bind(this.minionUpgradeETA, this);
       this.bigUnitETA = bind(this.bigUnitETA, this);
       this.smallUnitETA = bind(this.smallUnitETA, this);
       this.unitETA = bind(this.unitETA, this);
@@ -86,14 +88,18 @@
       this.upgradeAcolytesText = bind(this.upgradeAcolytesText, this);
       this.upgradeMinionsText = bind(this.upgradeMinionsText, this);
       this.updateRoomBox = bind(this.updateRoomBox, this);
+      this.acolyteUpgradeProgressPercent = bind(this.acolyteUpgradeProgressPercent, this);
+      this.minionUpgradeProgressPercent = bind(this.minionUpgradeProgressPercent, this);
       this.bigUnitProgressPercent = bind(this.bigUnitProgressPercent, this);
       this.smallUnitProgressPercent = bind(this.smallUnitProgressPercent, this);
       this.unitProgressPercent = bind(this.unitProgressPercent, this);
       this.roomProgressPercent = bind(this.roomProgressPercent, this);
       this.reputationRate = bind(this.reputationRate, this);
+      this.updateValuesNoApply = bind(this.updateValuesNoApply, this);
       this.updateValues = bind(this.updateValues, this);
       this.tick = bind(this.tick, this);
       var i, k, l, m, ref, ref1;
+      window.simulator = this;
       this.rootScope = $rootScope;
       this.minions = 5;
       this.smallMinions = 0;
@@ -142,28 +148,25 @@
       this.minionUpgradeCost = Math.floor(15000 * 0.2);
       this.acolyteUpgradeCost = Math.floor(15000 * 0.2);
       this.cost = 1500;
+      this.firstTick = true;
       setInterval(this.tick, 100);
     }
 
     Dungeon.prototype.tick = function() {
-      var i, k, len, monster, ref, results;
+      var i, k, l, len, monster, ref, ref1;
       this.updateValues();
       this.updateRoomBox();
-      this.updateRoomCanvas();
       ref = this.monsterObjects;
-      results = [];
       for (k = 0, len = ref.length; k < len; k++) {
         monster = ref[k];
-        results.push((function() {
-          var l, ref1, results1;
-          results1 = [];
-          for (i = l = 0, ref1 = this.devMultiplier - 1; 0 <= ref1 ? l <= ref1 : l >= ref1; i = 0 <= ref1 ? ++l : --l) {
-            results1.push(monster.tick());
-          }
-          return results1;
-        }).call(this));
+        for (i = l = 0, ref1 = this.devMultiplier - 1; 0 <= ref1 ? l <= ref1 : l >= ref1; i = 0 <= ref1 ? ++l : --l) {
+          monster.tick();
+        }
       }
-      return results;
+      if (this.firstTick) {
+        this.updateRoomCanvas();
+        return this.firstTick = false;
+      }
     };
 
     Dungeon.prototype.updateValues = function() {
@@ -174,6 +177,7 @@
         this.rooms += 1;
         this.roomObjects[this.rooms - 1] = new Room();
         this.digRoom();
+        this.updateRoomCanvas();
       }
       this.reputation += ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
       for (i = k = 0, ref = Math.floor(this.treasure * this.devMultiplier) - 1; 0 <= ref ? k <= ref : k >= ref; i = 0 <= ref ? ++k : --k) {
@@ -185,6 +189,29 @@
       return this.rootScope.$apply();
     };
 
+    Dungeon.prototype.updateValuesNoApply = function() {
+      var adventurerRoll, i, k, ref, results;
+      this.roomProgress += ((this.smallMinions / 4) + this.minions + (this.bigMinions * 4)) * this.devMultiplier * this.minionMultiplier;
+      if (this.roomProgress >= this.roomCost()) {
+        this.roomProgress -= this.roomCost();
+        this.rooms += 1;
+        this.roomObjects[this.rooms - 1] = new Room();
+        this.digRoom();
+        this.updateRoomCanvas();
+      }
+      this.reputation += ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
+      results = [];
+      for (i = k = 0, ref = Math.floor(this.treasure * this.devMultiplier) - 1; 0 <= ref ? k <= ref : k >= ref; i = 0 <= ref ? ++k : --k) {
+        adventurerRoll = Math.floor((Math.random() * 14500) + 1);
+        if (adventurerRoll === 14500) {
+          results.push(this.runDungeon());
+        } else {
+          results.push(void 0);
+        }
+      }
+      return results;
+    };
+
     Dungeon.prototype.reputationRate = function() {
       return Math.floor(((this.smallAcolytes * 2.5) + (this.acolytes * 10) + (this.bigAcolytes * 40)) * this.acolyteMultiplier);
     };
@@ -194,24 +221,38 @@
     };
 
     Dungeon.prototype.unitProgressPercent = function() {
-      if (this.reputation > this.cost && this.reputationRate() > this.cost) {
+      if (this.reputation >= this.cost) {
         return '100';
       }
       return ((this.reputation % this.cost) / this.cost * 100).toString();
     };
 
     Dungeon.prototype.smallUnitProgressPercent = function() {
-      if (this.reputation > Math.floor(this.cost / 4) && this.reputationRate() > Math.floor(this.cost / 4)) {
+      if (this.reputation >= Math.floor(this.cost / 4)) {
         return '100';
       }
       return ((this.reputation % Math.floor(this.cost / 4)) / Math.floor(this.cost / 4) * 100).toString();
     };
 
     Dungeon.prototype.bigUnitProgressPercent = function() {
-      if (this.reputation > Math.floor(this.cost * 2.8) && this.reputationRate() > Math.floor(this.cost * 2.8)) {
+      if (this.reputation >= Math.floor(this.cost * 2.8)) {
         return '100';
       }
       return ((this.reputation % Math.floor(this.cost * 2.8)) / Math.floor(this.cost * 2.8) * 100).toString();
+    };
+
+    Dungeon.prototype.minionUpgradeProgressPercent = function() {
+      if (this.reputation >= this.minionUpgradeCost) {
+        return '100';
+      }
+      return (this.reputation / this.minionUpgradeCost * 100).toString();
+    };
+
+    Dungeon.prototype.acolyteUpgradeProgressPercent = function() {
+      if (this.reputation >= this.acolyteUpgradeCost) {
+        return '100';
+      }
+      return (this.reputation / this.acolyteUpgradeCost * 100).toString();
     };
 
     Dungeon.prototype.updateRoomBox = function() {
@@ -285,7 +326,11 @@
 
     Dungeon.prototype.unitETA = function() {
       var duration, eta, moment_time, rate, remaining, specific;
-      remaining = this.cost - (this.reputation % this.cost);
+      if (this.reputation > this.cost) {
+        remaining = 0;
+      } else {
+        remaining = this.cost - this.reputation;
+      }
       rate = ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
       duration = moment.duration(eta * 100);
@@ -314,7 +359,11 @@
 
     Dungeon.prototype.smallUnitETA = function() {
       var duration, eta, moment_time, rate, remaining, specific;
-      remaining = Math.floor(this.cost / 4) - (this.reputation % Math.floor(this.cost / 4));
+      if (this.reputation > Math.floor(this.cost / 4)) {
+        remaining = 0;
+      } else {
+        remaining = Math.floor(this.cost / 4) - this.reputation;
+      }
       rate = ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
       duration = moment.duration(eta * 100);
@@ -343,7 +392,77 @@
 
     Dungeon.prototype.bigUnitETA = function() {
       var duration, eta, moment_time, rate, remaining, specific;
-      remaining = Math.floor(this.cost * 2.8) - (this.reputation % Math.floor(this.cost * 2.8));
+      if (this.reputation > Math.floor(this.cost * 2.8)) {
+        remaining = 0;
+      } else {
+        remaining = Math.floor(this.cost * 2.8) - this.reputation;
+      }
+      rate = ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
+      eta = Math.floor(remaining / rate);
+      duration = moment.duration(eta * 100);
+      moment_time = duration.humanize();
+      specific = "";
+      if (duration.years() > 0) {
+        specific += (duration.years()) + "y";
+      }
+      if (duration.months() > 0) {
+        specific += (duration.months()) + "M";
+      }
+      if (duration.days() > 0) {
+        specific += (duration.days()) + "d";
+      }
+      if (duration.hours() > 0) {
+        specific += (duration.hours()) + "h";
+      }
+      if (duration.minutes() > 0) {
+        specific += (duration.minutes()) + "m";
+      }
+      if (duration.seconds() > 0) {
+        specific += (duration.seconds()) + "s";
+      }
+      return specific;
+    };
+
+    Dungeon.prototype.minionUpgradeETA = function() {
+      var duration, eta, moment_time, rate, remaining, specific;
+      if (this.reputation > this.minionUpgradeCost) {
+        remaining = 0;
+      } else {
+        remaining = this.minionUpgradeCost - this.reputation;
+      }
+      rate = ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
+      eta = Math.floor(remaining / rate);
+      duration = moment.duration(eta * 100);
+      moment_time = duration.humanize();
+      specific = "";
+      if (duration.years() > 0) {
+        specific += (duration.years()) + "y";
+      }
+      if (duration.months() > 0) {
+        specific += (duration.months()) + "M";
+      }
+      if (duration.days() > 0) {
+        specific += (duration.days()) + "d";
+      }
+      if (duration.hours() > 0) {
+        specific += (duration.hours()) + "h";
+      }
+      if (duration.minutes() > 0) {
+        specific += (duration.minutes()) + "m";
+      }
+      if (duration.seconds() > 0) {
+        specific += (duration.seconds()) + "s";
+      }
+      return specific;
+    };
+
+    Dungeon.prototype.acolyteUpgradeETA = function() {
+      var duration, eta, moment_time, rate, remaining, specific;
+      if (this.reputation > this.acolyteUpgradeCost) {
+        remaining = 0;
+      } else {
+        remaining = this.acolyteUpgradeCost - this.reputation;
+      }
       rate = ((this.smallAcolytes / 4) + this.acolytes + (this.bigAcolytes * 4)) * this.devMultiplier * this.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
       duration = moment.duration(eta * 100);
@@ -977,12 +1096,18 @@
     $scope.smallUnitProgressPercentRounded = 0;
     $scope.bigUnitProgressPercent = 0;
     $scope.bigUnitProgressPercentRounded = 0;
+    $scope.minionUpgradeProgressPercent = 0;
+    $scope.minionUpgradeProgressPercentRounded = 0;
+    $scope.acolyteUpgradeProgressPercent = 0;
+    $scope.acolyteUpgradeProgressPercentRounded = 0;
     $scope.rooms = 0;
     $scope.alerts = [];
     $scope.roomETA = "";
     $scope.unitETA = "";
     $scope.smallUnitETA = "";
     $scope.bigUnitETA = "";
+    $scope.minionUpgradeETA = "";
+    $scope.acolyteUpgradeETA = "";
     $scope.monsters = 0;
     $scope.smallMonsters = 0;
     $scope.bigMonsters = 0;
@@ -1001,6 +1126,10 @@
     $scope.upgradeMinionsText = "";
     $scope.upgradeAcolytesText = "";
     $scope.emptyRooms = 0;
+    $scope.devMultiplier = 1;
+    $scope.skipDays = 0;
+    $scope.skipHours = 0;
+    $scope.skipMinutes = 0;
     $scope.$watch('dungeon.reputation', function(newVal) {
       $scope.reputation = Math.floor(newVal);
       $scope.buyAllMinionsText = "Buy All (" + (dungeon.maxNumberToBuy(dungeon.cost)) + ")";
@@ -1047,6 +1176,14 @@
       $scope.bigUnitProgressPercent = newVal;
       return $scope.bigUnitProgressPercentRounded = Math.floor(newVal);
     });
+    $scope.$watch('dungeon.minionUpgradeProgressPercent()', function(newVal) {
+      $scope.minionUpgradeProgressPercent = newVal;
+      return $scope.minionUpgradeProgressPercentRounded = Math.floor(newVal);
+    });
+    $scope.$watch('dungeon.acolyteUpgradeProgressPercent()', function(newVal) {
+      $scope.acolyteUpgradeProgressPercent = newVal;
+      return $scope.acolyteUpgradeProgressPercentRounded = Math.floor(newVal);
+    });
     $scope.$watch('dungeon.rooms', function(newVal) {
       $scope.rooms = newVal;
       if ($scope.rooms > 5) {
@@ -1067,6 +1204,12 @@
     });
     $scope.$watch('dungeon.bigUnitETA()', function(newVal) {
       return $scope.bigUnitETA = newVal;
+    });
+    $scope.$watch('dungeon.minionUpgradeETA()', function(newVal) {
+      return $scope.minionUpgradeETA = newVal;
+    });
+    $scope.$watch('dungeon.acolyteUpgradeETA()', function(newVal) {
+      return $scope.acolyteUpgradeETA = newVal;
     });
     $scope.$watch('dungeon.monsters', function(newVal) {
       return $scope.monsters = newVal;
@@ -1104,8 +1247,43 @@
     $scope.$watch('dungeon.emptyRooms()', function(newVal) {
       return $scope.emptyRooms = newVal;
     });
-    return $scope.closeAlert = function(index) {
+    $scope.closeAlert = function(index) {
       return $scope.alerts.splice(index, 1);
+    };
+    $scope.setDevMultiplier = function() {
+      return $scope.dungeon.devMultiplier = this.devMultiplier;
+    };
+    return $scope.timeSkip = function() {
+      var days, hours, i, j, k, minutes, monster, ref, results, seconds, ticks;
+      days = this.skipDays;
+      hours = (days * 24) + this.skipHours;
+      minutes = (hours * 60) + this.skipMinutes;
+      seconds = minutes * 60;
+      ticks = seconds * 10;
+      console.log(ticks);
+      results = [];
+      for (i = k = 1, ref = ticks; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+        console.log(i, ticks);
+        this.dungeon.updateValuesNoApply();
+        results.push((function() {
+          var l, len, ref1, results1;
+          ref1 = this.dungeon.monsterObjects;
+          results1 = [];
+          for (l = 0, len = ref1.length; l < len; l++) {
+            monster = ref1[l];
+            results1.push((function() {
+              var m, ref2, results2;
+              results2 = [];
+              for (j = m = 0, ref2 = this.dungeon.devMultiplier - 1; 0 <= ref2 ? m <= ref2 : m >= ref2; j = 0 <= ref2 ? ++m : --m) {
+                results2.push(monster.tick());
+              }
+              return results2;
+            }).call(this));
+          }
+          return results1;
+        }).call(this));
+      }
+      return results;
     };
   });
 

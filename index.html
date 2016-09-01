@@ -14,6 +14,45 @@
   </head>
   <body style='background-color: #FFFFFF;'>
     <uib-tabset>
+        <uib-tab heading="Summary">
+            <div class="unitBox">
+              Word of your dungeon has spread far and wide. Your reputation allows you to recruit minions, monsters and acolytes to improve your dungeon.<br/>
+              You currently have <span ng-bind="reputation"></span> reputation.</br>
+              You earn <span ng-bind="reputationRate"></span> reputation per second.<br />
+              Space: <span id="population" ng-bind="population"></span>/<span id="maxPopulation" ng-bind="maxPopulation"></span><br/>
+              Empty rooms: <span ng-bind="emptyRooms"></span><br />
+            </div>
+            <div class="unitBox">
+              Minions dig additional rooms in your dungeon.<br/>
+              Rooms limit how many units you can have.<br />
+              You currently have <span id="smallMinionCount" ng-bind="smallMinions"></span> small minions.<br/>
+              You currently have <span id="minionCount" ng-bind="minions"></span> minions.<br/>
+              You currently have <span id="bigMinionCount" ng-bind="bigMinions"></span> big minions.<br/>
+            </div>
+            <div class="unitBox">
+              Monsters protect your dungeon, killing adventurers that enter. Of these, <span id="monsterActiveCount" ng-bind="monstersActive"></span> are active.<br/>
+              You currently have <span id="smallMonsterCount" ng-bind="smallMonsters"></span> small Monsters.<br/>
+              You currently have <span id="monsterCount" ng-bind="monsters"></span> monsters.<br>
+              You currently have <span id="bigMonsterCount" ng-bind="bigMonsters"></span> big Monsters.<br/>
+            </div>
+            <div class="unitBox">
+              Acolytes go out and teach of your power, gaining you reputation.<br/>
+              You currently have <span id="smallAcolyteCount" ng-bind="smallAcolytes"></span> small Acolytes.<br/>
+              You currently have <span id="acolyteCount" ng-bind="acolytes"></span> acolytes.<br>
+              You currently have <span id="bigAcolyteCount" ng-bind="bigAcolytes"></span> big Acolytes.<br/>
+            </div>
+            <div class="unitBox">
+              <div>
+                Adventurers are coming to your dungeon hoping to steal your treasure. The more treasure you have the more likely adventurers are to come and try to steal it, so make sure to guard it well with monsters.
+              </div>
+              <span id="adventurerCount" ng-bind="adventurers"></span> adventurers have died in your dungeon.<br/>
+              You have hoarded <span id="treasureCount" ng-bind="treasure"></span> treasures.
+            </div>
+            <div class="unitBox" id="roomProgressPanel">
+                Excavation progress:<br />
+                <uib-progressbar value="roomProgressPercent">{{roomETA}} {{roomProgressPercentRounded}}%</uib-progressbar>
+            </div>
+        </uib-tab>
         <uib-tab heading="Minions">
             <div class="unitBox">
               Word of your dungeon has spread far and wide. Your reputation allows you to recruit minions, monsters and acolytes to improve your dungeon.<br/>
@@ -26,23 +65,31 @@
               Minions dig additional rooms in your dungeon.<br/>
               Rooms limit how many units you can have.<br />
               Each class of minions is 4x as effective as the previous one.
-              You currently have <span id="smallMinionCount" ng-bind="smallMinions"></span> small minions. They take up 5 space each.<br/>
-              You currently have <span id="minionCount" ng-bind="minions"></span> minions. They take up 10 space each.<br/>
-              You currently have <span id="bigMinionCount" ng-bind="bigMinions"></span> big minions. They take up 25 space each.<br/>
               Excavation progress:<br />
               <uib-progressbar value="roomProgressPercent">{{roomETA}} {{roomProgressPercentRounded}}%</uib-progressbar>
+              Your dungeon has <span id="roomCount" ng-bind="rooms"></span> rooms.<br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="smallMinionCount" ng-bind="smallMinions"></span> small minions. They take up 5 space each and cost 375 reputation.<br/>
               Progress towards next small minion:<br />
               <uib-progressbar value="smallUnitProgressPercent">{{smallUnitETA}} {{smallUnitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllSmallMinions" ng-click="dungeon.buyAllSmallMinions()" ng-bind="buyAllSmallMinionsText">Buy All</button><button id="buySmallMinion" ng-click="dungeon.buySmallMinion()">Buy Mini-on</button><button id="sellSmallMinion" ng-click="dungeon.sellSmallMinion()">Dismiss Mini-on</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="minionCount" ng-bind="minions"></span> minions. They take up 10 space each and cost 1500 reputation.<br/>
               Progress towards next minion:<br />
               <uib-progressbar value="unitProgressPercent">{{unitETA}} {{unitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllMinions" ng-click="dungeon.buyAllMinions()" ng-bind="buyAllMinionsText">Buy All</button><button id="buyMinion" ng-click="dungeon.buyMinion()">Buy Minion</button><button id="sellMinion" ng-click="dungeon.sellMinion()">Dismiss Minion</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="bigMinionCount" ng-bind="bigMinions"></span> big minions. They take up 25 space each and cost 4200 reputation.<br/>
               Progress towards next big minion:<br />
               <uib-progressbar value="bigUnitProgressPercent">{{bigUnitETA}} {{bigUnitProgressPercentRounded}}%</uib-progressbar>
-              Your dungeon has <span id="roomCount" ng-bind="rooms"></span> rooms.<br/>
-              <button id="buyAllSmallMinions" ng-click="dungeon.buyAllSmallMinions()" ng-bind="buyAllSmallMinionsText">Buy All</button><button id="buySmallMinion" ng-click="dungeon.buySmallMinion()">Buy Mini-on</button><button id="sellSmallMinion" ng-click="dungeon.sellSmallMinion()">Dismiss Mini-on</button><br/>
-              <button id="buyAllMinions" ng-click="dungeon.buyAllMinions()" ng-bind="buyAllMinionsText">Buy All</button><button id="buyMinion" ng-click="dungeon.buyMinion()">Buy Minion</button><button id="sellMinion" ng-click="dungeon.sellMinion()">Dismiss Minion</button><br/>
               <button id="buyAllBigMinions" ng-click="dungeon.buyAllBigMinions()" ng-bind="buyAllBigMinionsText">Buy All</button><button id="buyBigMinion" ng-click="dungeon.buyBigMinion()">Buy Big Minion</button><button id="sellBigMinion" ng-click="dungeon.sellBigMinion()">Dismiss Big Minion</button>
             </div>
             <div class="unitBox" style="float: top;">
+                Progress towards next upgrade:<br />
+                <uib-progressbar value="minionUpgradeProgressPercent">{{minionUpgradeETA}} {{minionUpgradeProgressPercentRounded}}%</uib-progressbar>
                 <button id='upgradeMinions' ng-click="dungeon.upgradeMinions()" ng-bind="upgradeMinionsText">Upgrade Minions</button><br/>
                 Upgrading improves effectiveness of all minion units by 20%
             </div>
@@ -57,19 +104,25 @@
             </div>
             <div class="unitBox">
               Monsters protect your dungeon, killing adventurers that enter. Of these, <span id="monsterActiveCount" ng-bind="monstersActive"></span> are active.<br/>
-              You currently have <span id="smallMonsterCount" ng-bind="smallMonsters"></span> small Monsters. 4 hp, deal 1-8 dmg. They take up 5 space each.<br/>
-              You currently have <span id="monsterCount" ng-bind="monsters"></span> monsters. 15 hp, deal 4-15 dmg. They take up 10 space each.<br>
-              You currently have <span id="bigMonsterCount" ng-bind="bigMonsters"></span> big Monsters. 60 hp, deal 34-45 dmg. They take up 25 space each.<br/>
               Adventurers have 13 hp, deal 3-10 dmg.<br/>
-              <b>THESE NUMBERS ARE TERRIBLE AND WILL BE REBALANCED.</b><br />
+              <b>ALL NUMBERS HERE ARE TERRIBLE AND WILL BE REBALANCED.</b><br />
+            </div>
+            <div class="unitBox">
+              You currently have <span id="smallMonsterCount" ng-bind="smallMonsters"></span> small Monsters. 4 hp, deal 1-8 dmg. They take up 5 space each and cost 375 reputation.<br/>
               Progress towards next small monster:<br />
               <uib-progressbar value="smallUnitProgressPercent">{{smallUnitETA}} {{smallUnitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllSmallMonsters" ng-click="dungeon.buyAllSmallMonsters()" ng-bind="buyAllSmallMonstersText">Buy All</button><button id="buySmallMonster" ng-click="dungeon.buySmallMonster()">Buy Small Monster</button><button id="sellSmallMonster" ng-click="dungeon.sellSmallMonster()">Dismiss Small Monster</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="monsterCount" ng-bind="monsters"></span> monsters. 15 hp, deal 4-15 dmg. They take up 10 space each and cost 1500 reputation.<br>
               Progress towards next monster:<br />
               <uib-progressbar value="unitProgressPercent">{{unitETA}} {{unitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllMonsters" ng-click="dungeon.buyAllMonsters()" ng-bind="buyAllMonstersText">Buy All</button><button id="buyMonster" ng-click="dungeon.buyMonster()">Buy Monster</button><button id="sellMonster" ng-click="dungeon.sellMonster()">Dismiss Monster</button><br/>
+            </div>
+            <div class="unitBox">            
+              You currently have <span id="bigMonsterCount" ng-bind="bigMonsters"></span> big Monsters. 60 hp, deal 34-45 dmg. They take up 25 space each and cost 4200 reputation.<br/>
               Progress towards next big monster:<br />
               <uib-progressbar value="bigUnitProgressPercent">{{bigUnitETA}} {{bigUnitProgressPercentRounded}}%</uib-progressbar>
-              <button id="buyAllSmallMonsters" ng-click="dungeon.buyAllSmallMonsters()" ng-bind="buyAllSmallMonstersText">Buy All</button><button id="buySmallMonster" ng-click="dungeon.buySmallMonster()">Buy Small Monster</button><button id="sellSmallMonster" ng-click="dungeon.sellSmallMonster()">Dismiss Small Monster</button><br/>
-              <button id="buyAllMonsters" ng-click="dungeon.buyAllMonsters()" ng-bind="buyAllMonstersText">Buy All</button><button id="buyMonster" ng-click="dungeon.buyMonster()">Buy Monster</button><button id="sellMonster" ng-click="dungeon.sellMonster()">Dismiss Monster</button><br/>
               <button id="buyAllBigMonsters" ng-click="dungeon.buyAllBigMonsters()" ng-bind="buyAllBigMonstersText">Buy All</button><button id="buyBigMonster" ng-click="dungeon.buyBigMonster()">Buy Big Monster</button><button id="sellBigMonster" ng-click="dungeon.sellBigMonster()">Dismiss Big Monster</button>
             </div>
         </uib-tab>
@@ -83,20 +136,28 @@
             </div>
             <div class="unitBox">
               Acolytes go out and teach of your power, gaining you reputation.<br/>
-              You currently have <span id="smallAcolyteCount" ng-bind="smallAcolytes"></span> small Acolytes, who earn you 2.5 rep/s. They take up 5 space each.<br/>
-              You currently have <span id="acolyteCount" ng-bind="acolytes"></span> acolytes, who earn you 10 rep/s. They take up 10 space each.<br>
-              You currently have <span id="bigAcolyteCount" ng-bind="bigAcolytes"></span> big Acolytes, who earn you 40 rep/s. They take up 25 space each.<br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="smallAcolyteCount" ng-bind="smallAcolytes"></span> small Acolytes, who earn you 2.5 rep/s. They take up 5 space each and cost 375 reputation.<br/>
               Progress towards next small acolyte:<br />
               <uib-progressbar value="smallUnitProgressPercent">{{smallUnitETA}} {{smallUnitProgressPercentRounded}}%</uib-progressbar>
+            <button id="buyAllSmallAcolytes" ng-click="dungeon.buyAllSmallAcolytes()" ng-bind="buyAllSmallAcolytesText">Buy All</button><button id="buySmallAcolyte" ng-click="dungeon.buySmallAcolyte()">Buy Small Acolyte</button><button id="sellSmallAcolyte" ng-click="dungeon.sellSmallAcolyte()">Dismiss Small Acolyte</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="acolyteCount" ng-bind="acolytes"></span> acolytes, who earn you 10 rep/s. They take up 10 space each and cost 1500 reputation.<br>
               Progress towards next acolyte:<br />
               <uib-progressbar value="unitProgressPercent">{{unitETA}} {{unitProgressPercentRounded}}%</uib-progressbar>
+            <button id="buyAllAcolytes" ng-click="dungeon.buyAllAcolytes()"ng-bind="buyAllAcolytesText">Buy All</button><button id="buyAcolyte" ng-click="dungeon.buyAcolyte()">Buy Acolyte</button><button id="sellAcolyte" ng-click="dungeon.sellAcolyte()">Dismiss Acolyte</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="bigAcolyteCount" ng-bind="bigAcolytes"></span> big Acolytes, who earn you 40 rep/s. They take up 25 space each and cost 4200 reputation.<br/>
               Progress towards next big acolyte:<br />
               <uib-progressbar value="bigUnitProgressPercent">{{bigUnitETA}} {{bigUnitProgressPercentRounded}}%</uib-progressbar>
-            <button id="buyAllSmallAcolytes" ng-click="dungeon.buyAllSmallAcolytes()" ng-bind="buyAllSmallAcolytesText">Buy All</button><button id="buySmallAcolyte" ng-click="dungeon.buySmallAcolyte()">Buy Small Acolyte</button><button id="sellSmallAcolyte" ng-click="dungeon.sellSmallAcolyte()">Dismiss Small Acolyte</button><br/>
-            <button id="buyAllAcolytes" ng-click="dungeon.buyAllAcolytes()"ng-bind="buyAllAcolytesText">Buy All</button><button id="buyAcolyte" ng-click="dungeon.buyAcolyte()">Buy Acolyte</button><button id="sellAcolyte" ng-click="dungeon.sellAcolyte()">Dismiss Acolyte</button><br/>
             <button id="buyAllBigAcolytes" ng-click="dungeon.buyAllBigAcolytes()" ng-bind="buyAllBigAcolytesText">Buy All</button><button id="buyBigAcolyte" ng-click="dungeon.buyBigAcolyte()">Buy Big Acolyte</button><button id="sellBigAcolyte" ng-click="dungeon.sellBigAcolyte()">Dismiss Big Acolyte</button>
             </div>
             <div class="unitBox" style="float: top;">
+                Progress towards next upgrade:<br />
+                <uib-progressbar value="acolyteUpgradeProgressPercent">{{acolyteUpgradeETA}} {{acolyteUpgradeProgressPercentRounded}}%</uib-progressbar>
                 <button id='upgradeAcolytes' ng-click="dungeon.upgradeAcolytes()" ng-bind="upgradeAcolytesText">Upgrade Acolytes</button><br />
                 Upgrading improves effectiveness of all acolyte units by 20%
             </div>
@@ -104,7 +165,7 @@
         <uib-tab heading="Adventurers">
             <div class="unitBox">
               <div>
-                Adventurers are come to your dungeon hoping to steal your treasure. The more treasure you have the more likely adventurers are to come and try to steal it, so make sure to guard it well with monsters.
+                Adventurers are coming to your dungeon hoping to steal your treasure. The more treasure you have the more likely adventurers are to come and try to steal it, so make sure to guard it well with monsters.
               </div>
               <span id="adventurerCount" ng-bind="adventurers"></span> adventurers have died in your dungeon.<br/>
               You have hoarded <span id="treasureCount" ng-bind="treasure"></span> treasures.
@@ -122,12 +183,113 @@
                 <canvas height='512' id='mainCanvas' width='512' style="float: left; width: 512px;"></canvas>
             </div>
         </uib-tab>
+        <uib-tab heading="PowerBuy">
+            <div style="float: left;">
+            <div class="unitBox">
+              Word of your dungeon has spread far and wide. Your reputation allows you to recruit minions, monsters and acolytes to improve your dungeon.<br/>
+              You currently have <span ng-bind="reputation"></span> reputation.</br>
+              You earn <span ng-bind="reputationRate"></span> reputation per second.<br />
+              Space: <span id="population" ng-bind="population"></span>/<span id="maxPopulation" ng-bind="maxPopulation"></span><br/>
+              Empty rooms: <span ng-bind="emptyRooms"></span><br />
+            </div>
+            <div class="unitBox">
+              Minions dig additional rooms in your dungeon.<br/>
+              Rooms limit how many units you can have.<br />
+              Each class of minions is 4x as effective as the previous one.
+              Excavation progress:<br />
+              <uib-progressbar value="roomProgressPercent">{{roomETA}} {{roomProgressPercentRounded}}%</uib-progressbar>
+              Your dungeon has <span id="roomCount" ng-bind="rooms"></span> rooms.<br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="smallMinionCount" ng-bind="smallMinions"></span> small minions. They take up 5 space each and cost 375 reputation.<br/>
+              Progress towards next small minion:<br />
+              <uib-progressbar value="smallUnitProgressPercent">{{smallUnitETA}} {{smallUnitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllSmallMinions" ng-click="dungeon.buyAllSmallMinions()" ng-bind="buyAllSmallMinionsText">Buy All</button><button id="buySmallMinion" ng-click="dungeon.buySmallMinion()">Buy Mini-on</button><button id="sellSmallMinion" ng-click="dungeon.sellSmallMinion()">Dismiss Mini-on</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="minionCount" ng-bind="minions"></span> minions. They take up 10 space each and cost 1500 reputation.<br/>
+              Progress towards next minion:<br />
+              <uib-progressbar value="unitProgressPercent">{{unitETA}} {{unitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllMinions" ng-click="dungeon.buyAllMinions()" ng-bind="buyAllMinionsText">Buy All</button><button id="buyMinion" ng-click="dungeon.buyMinion()">Buy Minion</button><button id="sellMinion" ng-click="dungeon.sellMinion()">Dismiss Minion</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="bigMinionCount" ng-bind="bigMinions"></span> big minions. They take up 25 space each and cost 4200 reputation.<br/>
+              Progress towards next big minion:<br />
+              <uib-progressbar value="bigUnitProgressPercent">{{bigUnitETA}} {{bigUnitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllBigMinions" ng-click="dungeon.buyAllBigMinions()" ng-bind="buyAllBigMinionsText">Buy All</button><button id="buyBigMinion" ng-click="dungeon.buyBigMinion()">Buy Big Minion</button><button id="sellBigMinion" ng-click="dungeon.sellBigMinion()">Dismiss Big Minion</button>
+            </div>
+            <div class="unitBox" style="float: top;">
+                Progress towards next upgrade:<br />
+                <uib-progressbar value="minionUpgradeProgressPercent">{{minionUpgradeETA}} {{minionUpgradeProgressPercentRounded}}%</uib-progressbar>
+                <button id='upgradeMinions' ng-click="dungeon.upgradeMinions()" ng-bind="upgradeMinionsText">Upgrade Minions</button><br/>
+                Upgrading improves effectiveness of all minion units by 20%
+            </div>
+            </div>
+            <div style="float: left;">
+            <div class="unitBox">
+              Monsters protect your dungeon, killing adventurers that enter. Of these, <span id="monsterActiveCount" ng-bind="monstersActive"></span> are active.<br/>
+              Adventurers have 13 hp, deal 3-10 dmg.<br/>
+              <b>ALL NUMBERS HERE ARE TERRIBLE AND WILL BE REBALANCED.</b><br />
+            </div>
+            <div class="unitBox">
+              You currently have <span id="smallMonsterCount" ng-bind="smallMonsters"></span> small Monsters. 4 hp, deal 1-8 dmg. They take up 5 space each and cost 375 reputation.<br/>
+              Progress towards next small monster:<br />
+              <uib-progressbar value="smallUnitProgressPercent">{{smallUnitETA}} {{smallUnitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllSmallMonsters" ng-click="dungeon.buyAllSmallMonsters()" ng-bind="buyAllSmallMonstersText">Buy All</button><button id="buySmallMonster" ng-click="dungeon.buySmallMonster()">Buy Small Monster</button><button id="sellSmallMonster" ng-click="dungeon.sellSmallMonster()">Dismiss Small Monster</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="monsterCount" ng-bind="monsters"></span> monsters. 15 hp, deal 4-15 dmg. They take up 10 space each and cost 1500 reputation.<br>
+              Progress towards next monster:<br />
+              <uib-progressbar value="unitProgressPercent">{{unitETA}} {{unitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllMonsters" ng-click="dungeon.buyAllMonsters()" ng-bind="buyAllMonstersText">Buy All</button><button id="buyMonster" ng-click="dungeon.buyMonster()">Buy Monster</button><button id="sellMonster" ng-click="dungeon.sellMonster()">Dismiss Monster</button><br/>
+            </div>
+            <div class="unitBox">            
+              You currently have <span id="bigMonsterCount" ng-bind="bigMonsters"></span> big Monsters. 60 hp, deal 34-45 dmg. They take up 25 space each and cost 4200 reputation.<br/>
+              Progress towards next big monster:<br />
+              <uib-progressbar value="bigUnitProgressPercent">{{bigUnitETA}} {{bigUnitProgressPercentRounded}}%</uib-progressbar>
+              <button id="buyAllBigMonsters" ng-click="dungeon.buyAllBigMonsters()" ng-bind="buyAllBigMonstersText">Buy All</button><button id="buyBigMonster" ng-click="dungeon.buyBigMonster()">Buy Big Monster</button><button id="sellBigMonster" ng-click="dungeon.sellBigMonster()">Dismiss Big Monster</button>
+            </div>
+            </div>
+            <div style="float: left;">
+            <div class="unitBox">
+              Acolytes go out and teach of your power, gaining you reputation.<br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="smallAcolyteCount" ng-bind="smallAcolytes"></span> small Acolytes, who earn you 2.5 rep/s. They take up 5 space each and cost 375 reputation.<br/>
+              Progress towards next small acolyte:<br />
+              <uib-progressbar value="smallUnitProgressPercent">{{smallUnitETA}} {{smallUnitProgressPercentRounded}}%</uib-progressbar>
+            <button id="buyAllSmallAcolytes" ng-click="dungeon.buyAllSmallAcolytes()" ng-bind="buyAllSmallAcolytesText">Buy All</button><button id="buySmallAcolyte" ng-click="dungeon.buySmallAcolyte()">Buy Small Acolyte</button><button id="sellSmallAcolyte" ng-click="dungeon.sellSmallAcolyte()">Dismiss Small Acolyte</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="acolyteCount" ng-bind="acolytes"></span> acolytes, who earn you 10 rep/s. They take up 10 space each and cost 1500 reputation.<br>
+              Progress towards next acolyte:<br />
+              <uib-progressbar value="unitProgressPercent">{{unitETA}} {{unitProgressPercentRounded}}%</uib-progressbar>
+            <button id="buyAllAcolytes" ng-click="dungeon.buyAllAcolytes()"ng-bind="buyAllAcolytesText">Buy All</button><button id="buyAcolyte" ng-click="dungeon.buyAcolyte()">Buy Acolyte</button><button id="sellAcolyte" ng-click="dungeon.sellAcolyte()">Dismiss Acolyte</button><br/>
+            </div>
+            <div class="unitBox">
+              You currently have <span id="bigAcolyteCount" ng-bind="bigAcolytes"></span> big Acolytes, who earn you 40 rep/s. They take up 25 space each and cost 4200 reputation.<br/>
+              Progress towards next big acolyte:<br />
+              <uib-progressbar value="bigUnitProgressPercent">{{bigUnitETA}} {{bigUnitProgressPercentRounded}}%</uib-progressbar>
+            <button id="buyAllBigAcolytes" ng-click="dungeon.buyAllBigAcolytes()" ng-bind="buyAllBigAcolytesText">Buy All</button><button id="buyBigAcolyte" ng-click="dungeon.buyBigAcolyte()">Buy Big Acolyte</button><button id="sellBigAcolyte" ng-click="dungeon.sellBigAcolyte()">Dismiss Big Acolyte</button>
+            </div>
+            <div class="unitBox" style="float: top;">
+                Progress towards next upgrade:<br />
+                <uib-progressbar value="acolyteUpgradeProgressPercent">{{acolyteUpgradeETA}} {{acolyteUpgradeProgressPercentRounded}}%</uib-progressbar>
+                <button id='upgradeAcolytes' ng-click="dungeon.upgradeAcolytes()" ng-bind="upgradeAcolytesText">Upgrade Acolytes</button><br />
+                Upgrading improves effectiveness of all acolyte units by 20%
+            </div>
+            </div>
+        </uib-tab>
+        <uib-tab heading="DevTools">
+            Dev Multiplier: <input type="number" ng-model="devMultiplier" /><button type="button" ng-click="setDevMultiplier()">OK</button><br />
+            Timeskip: <input type="number" style="width: 50px;" ng-model="skipDays" />d<input type="number" style="width: 50px;" ng-model="skipHours" />h<input type="number" style="width: 50px;" ng-model="skipMinutes" />m<button type="button" ng-click="timeSkip()">OK</button>
+        </uib-tab>
     </uib-tabset>
     <div style="position: absolute; bottom: 0; width: 400px">
     <div uib-alert id='alerts' style="width: 400px" ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')" close="closeAlert($index)">{{alert.msg}}
     </div>
     </div>
-    <div id='rightPanel' style="width: 512px; float: left;">
+    <div id='rightPanel' style="position:absolute; bottom: 0; right: 0;width: 512px;">
         <div id='narrationContainer' style="width: 512px; height: 300px; float: top; overflow: scroll;"></div>
     </div>
   </body>
