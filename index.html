@@ -209,6 +209,7 @@
             </div>
         </uib-tab>
         <uib-tab heading="Rooms">
+            <div style="float: left;">
             <div class="unitBox" id="roomProgressPanel">
                 Excavation progress:<br />
                 <uib-progressbar class="progress-bar-custom" value="roomProgressPercent">{{roomETA}} {{roomProgressPercentRounded}}%</uib-progressbar>
@@ -216,8 +217,9 @@
             <div class="unitBox" id="roomsPanel" style="float: left;">
                 SAMPLE TEXT
             </div>
-            <div class="canvasContainer" id='mainCanvasContainer' style="width: 512px; height: 512px; float: left;">
-                <canvas height='512' id='mainCanvas' width='512' style="float: left; width: 512px;"></canvas>
+            </div>
+            <div class="canvasContainer" id='mainCanvasContainer' style="width: 768px; height: 768; float: left;">
+                <canvas height='768' id='mainCanvas' width='768' style="float: left; width: 768px;"></canvas>
             </div>
         </uib-tab>
         <uib-tab heading="PowerBuy">
@@ -350,5 +352,6 @@
     <div uib-alert id='alerts' style="width: 400px" ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')" close="closeAlert($index)" dismiss-on-timeout="10000" ng-hide="alert.expired=='true'">{{alert.msg}}
     </div>
     </div>
+    <div class="unitBox" id='roomTooltip' style="visibility: hidden; position: absolute;"></div>
   </body>
 </html>

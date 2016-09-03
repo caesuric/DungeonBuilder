@@ -1,6 +1,6 @@
-CanvasInitializer =
+CanvasInitializer=
     initCanvas: ->
-        window.viewSize = 512
+        window.viewSize = 768
         mainCanvasContainer = document.getElementById('mainCanvasContainer')
         mainCanvasContainer.style.width = @viewSize
         mainCanvasContainer.style.height = @viewSize
@@ -9,6 +9,7 @@ CanvasInitializer =
         window.canvas.selection = false
         window.canvas.stateful = false
         window.canvas.renderOnAddRemove = false
+        window.canvas.skipTargetFind = true
         window.canvas.renderAll()
 
 app = angular.module('dungeonBuilder', ['ui.bootstrap', 'ngCookies', 'ngAnimate'])
@@ -17,6 +18,11 @@ app.service 'dungeon', class Dungeon
         window.simulator = this
         window.rootScope = $rootScope
         @data = new DungeonData()
+        @data.dragMode = false
+        @data.dragRoom = null
+        @data.dropRoom = null
+        @data.dragBox = null
+        @data.dragText = null
         @data.minions = 0
         @data.smallMinions = 5
         @data.bigMinions = 0
@@ -37,10 +43,6 @@ app.service 'dungeon', class Dungeon
             CanvasInitializer.initCanvas()
         )
             
-        @data.map = new Map()
-        for i in [1..4]
-            @digRoom()
-
         @data.roomProgress = 0
         @data.rooms = 5
         @data.roomObjects = []
@@ -61,7 +63,12 @@ app.service 'dungeon', class Dungeon
         @data.roomObjects[2].size = 10
         @data.roomObjects[3] = new Room()
         @data.roomObjects[4] = new Room()
-        
+
+        @data.map = new Map()
+        @data.roomObjects[0].boundaries = @data.map.initialRoomBoundaries
+        for i in [1..4]
+            @data.roomObjects[i].boundaries = @digRoom()
+        @formRoomConnections()
         @data.adventurers = 0
         @data.reputation = 0
         @data.devMultiplier = 1
@@ -105,7 +112,8 @@ app.service 'dungeon', class Dungeon
             @data.roomProgress -= @roomCost()
             @data.rooms += 1
             @data.roomObjects[@data.rooms-1] = new Room()
-            @digRoom()
+            @data.roomObjects[@data.rooms-1].boundaries = @digRoom()
+            @formRoomConnections()
             @updateRoomCanvas()
 
         @data.reputation += ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
@@ -122,7 +130,8 @@ app.service 'dungeon', class Dungeon
             @data.roomProgress -= @roomCost()
             @data.rooms += 1
             @data.roomObjects[@data.rooms-1] = new Room()
-            @digRoom()
+            @data.roomObjects[@data.rooms-1].boundaries = @digRoom()
+            @formRoomConnections()
             @updateRoomCanvas()
 
         @data.reputation += ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
@@ -322,13 +331,152 @@ app.service 'dungeon', class Dungeon
       bar.width("#{percent}%")
       
     updateRoomCanvas: ->
+        console.log('updating')
         window.canvas.clear()
+        window.canvas.setBackgroundColor('gray')
         for i in [0..@data.map.sizeX-1]
             for j in [0..@data.map.sizeY-1]
-                if @data.map.tiles[i][j]=='W'
-                    window.canvas.add new fabric.Rect(left: (i*8), top: (j*8), height: 8, width: 8, stroke: 'gray', fill: 'gray', strokeWidth: 2, selectable: false)
+                if @data.map.tiles[i][j]==' '
+                    window.canvas.add new fabric.Rect(left: (i*12), top: (j*12), height: 12, width: 12, stroke: 'black', fill: 'black', strokeWidth: 1, selectable: false)
+        for i in [0..@data.roomObjects.length-1]
+            room = @data.roomObjects[i]
+            window.canvas.add new fabric.Text((i+1).toString(),left: (room.boundaries[0]*12)+30, top: (room.boundaries[1]*12)+30, originX: 'center', originY: 'center', fill: 'white', fontSize: 16, selectable: false)
+            [unitRepresentation,color] = @unitCode(@data.roomObjects[i])
+            window.canvas.add new fabric.Text(unitRepresentation,left: (room.boundaries[0]*12), top: (room.boundaries[1]*12), originX: 'left', originY: 'top', fill: color, fontWeight: 'bold', fontSize: 16, selectable: false)
+        window.canvas.off
+        window.canvas.on 'mouse:move', (options) ->
+            window.simulator.roomMouseOver(options)
+        window.canvas.on 'mouse:down', (options) ->
+            window.simulator.roomMouseDown(options)
+        window.canvas.on 'mouse:up', (options) ->
+            window.simulator.roomMouseUp(options)
         window.canvas.renderAll()
-
+    unitCode: (room) =>
+        occupants = room.occupantType
+        if occupants == unitTypes.smallMinion or occupants == unitTypes.minion or occupants == unitTypes.bigMinion or occupants == unitTypes.hugeMinion
+            text='Mi'
+            color='yellow'
+        else if occupants == unitTypes.smallMonster or occupants == unitTypes.monster or occupants == unitTypes.bigMonster or occupants == unitTypes.hugeMonster
+            text='Mo'
+            color='red'
+        else if occupants == unitTypes.smallAcolyte or occupants == unitTypes.acolyte or occupants == unitTypes.bigAcolyte or occupants == unitTypes.hugeAcolyte
+            text='A'
+            color='cyan'
+        if occupants == unitTypes.smallMinion or occupants == unitTypes.smallMonster or occupants == unitTypes.smallAcolyte
+            text+='1'
+        else if occupants == unitTypes.minion or occupants == unitTypes.monster or occupants == unitTypes.acolyte
+            text+='2'
+        else if occupants == unitTypes.bigMinion or occupants == unitTypes.bigMonster or occupants == unitTypes.bigAcolyte
+            text=+'3'
+        else if occupants == unitTypes.hugeMinion or occupants == unitTypes.hugeMonster or occupants == unitTypes.hugeAcolyte
+            text=+'3'
+        text+=' x'
+        text+=room.population.toString()
+        return [text,color]
+    roomMouseOver: (options) ->
+        x = options.e.layerX
+        y = options.e.layerY
+        if @data.dragMode
+            if @data.dragBox != null
+                window.canvas.remove @data.dragBox
+            if @data.dragText != null
+                window.canvas.remove @data.dragText
+            @data.dragBox = new fabric.Rect(left: x, top: y, height: 60, width: 60, stroke: 'black', fill: 'black', strokeWidth: 1, selectable: false)
+            room = @data.roomObjects[@data.dragRoom]
+            [unitRepresentation,color] = @unitCode(room)
+            @data.dragText = new fabric.Text(unitRepresentation,left: x, top: y, originX: 'left', originY: 'top', fill: color, fontWeight: 'bold', fontSize: 16, selectable: false)
+            window.canvas.add @data.dragBox
+            window.canvas.add @data.dragText
+            window.canvas.renderAll()
+            @hidePopup()
+            return
+        for i in [0..@data.roomObjects.length-1]
+            room = @data.roomObjects[i]
+            boundaries = room.boundaries
+            if x>=boundaries[0]*12 and x<=(boundaries[2]+1)*12 and y>=boundaries[1]*12 and y<=(boundaries[3]+1)*12
+                @displayPopup(i, options.e.x, options.e.y)
+                return
+        @hidePopup()
+        return
+    roomMouseDown: (options) ->
+        @data.dragMode = true
+        x = options.e.layerX
+        y = options.e.layerY
+        for i in [0..@data.roomObjects.length-1]
+            room = @data.roomObjects[i]
+            boundaries = room.boundaries
+            if x>=boundaries[0]*12 and x<=(boundaries[2]+1)*12 and y>=boundaries[1]*12 and y<=(boundaries[3]+1)*12
+                @data.dragRoom = i
+                return
+    roomMouseUp: (options) ->
+        if @data.dragMode==false
+            return
+        @data.dragMode = false
+        x = options.e.layerX
+        y = options.e.layerY
+        for i in [0..@data.roomObjects.length-1]
+            room = @data.roomObjects[i]
+            boundaries = room.boundaries
+            if x>=boundaries[0]*12 and x<=(boundaries[2]+1)*12 and y>=boundaries[1]*12 and y<=(boundaries[3]+1)*12
+                @data.dropRoom = i
+                if @data.dragRoom!=null
+                    swapPopulation = @data.roomObjects[@data.dragRoom].population
+                    swapSize = @data.roomObjects[@data.dragRoom].size
+                    swapOccupantType = @data.roomObjects[@data.dragRoom].occupantType
+                    swapMonsters = @data.roomObjects[@data.dragRoom].monsters
+                    @data.roomObjects[@data.dragRoom].population = @data.roomObjects[@data.dropRoom].population
+                    @data.roomObjects[@data.dragRoom].size = @data.roomObjects[@data.dropRoom].size
+                    @data.roomObjects[@data.dragRoom].occupantType = @data.roomObjects[@data.dropRoom].occupantType
+                    @data.roomObjects[@data.dragRoom].monsters = @data.roomObjects[@data.dropRoom].monsters
+                    @data.roomObjects[@data.dropRoom].population = swapPopulation
+                    @data.roomObjects[@data.dropRoom].size = swapSize
+                    @data.roomObjects[@data.dropRoom].occupantType = swapOccupantType
+                    @data.roomObjects[@data.dropRoom].monsters = swapMonsters
+                    @updateRoomCanvas()
+                return
+        @data.dragRoom = null
+        @data.dropRoom = null
+    displayPopup: (roomIndex,x,y) =>
+        div = $('#roomTooltip')
+        div.css({left: x+20, top: y-20, visibility: 'visible'})
+        room = @data.roomObjects[roomIndex]
+        text = "Room "+(roomIndex+1).toString()+":"
+        if roomIndex==0
+            text +='<br><span style="color: blue;">Dungeon Entrance</span>'
+        text +="<br>Contains "
+        if room.occupantType == unitTypes.none
+            text += "nothing"
+        else if room.occupantType == unitTypes.minion
+            text += "minions"
+        else if room.occupantType == unitTypes.smallMinion
+            text += "mini-ons"
+        else if room.occupantType == unitTypes.bigMinion
+            text += "big minions"
+        else if room.occupantType == unitTypes.hugeMinion
+            text += "huge minion"
+        else if room.occupantType == unitTypes.monster
+            text += "monsters"
+        else if room.occupantType == unitTypes.smallMonster
+            text += "small monsters"
+        else if room.occupantType == unitTypes.bigMonster
+            text += "big monsters"
+        else if room.occupantType == unitTypes.hugeMonster
+            text += "huge monster"
+        else if room.occupantType == unitTypes.acolyte
+            text += "acolytes"
+        else if room.occupantType == unitTypes.smallAcolyte
+            text += "small acolytes"
+        else if room.occupantType == unitTypes.bigAcolyte
+            text += "big acolytes"
+        else if room.occupantType == unitTypes.hugeAcolyte
+            text += "huge acolyte"
+        text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>"
+        div.html text
+        return
+    hidePopup: =>
+        div = $('#roomTooltip')
+        div.css({visibility: 'hidden'})
+        return
     roomCost: =>
         costToBuild = 14528
         if @data.rooms >= 100
@@ -705,15 +853,34 @@ app.service 'dungeon', class Dungeon
     runDungeon: =>
         @narrate('An adventurer arrives!')
         adventurer = new Adventurer()
-        for room in @data.roomObjects
+        done = false
+        room = null
+        hasTreasure = false
+        while !done
+            room = @traverseRooms(room)
             if room.occupantType == unitTypes.monster or room.occupantType == unitTypes.smallMonster or room.occupantType == unitTypes.bigMonster or room.occupantType == unitTypes.hugeMonster
                 if @encounterMonsters(adventurer,room)
                     return
+            if room == @data.roomObjects[@data.roomObjects.length-1]
+                hasTreasure = true
+            if hasTreasure and room == @data.roomObjects[0]
+                done = true
         if @data.treasure>1
             @data.treasure -= 1
             @narrate('The adventurer has successfully beaten all of your monsters! They take one of your treasures!')
         else
             @narrate('The adventurer finds nothing and leaves.')
+    traverseRooms: (room) =>
+        if room == null
+            return @data.roomObjects[0]
+        possibleConnections = []
+        for connection in @data.connections
+            if room==@data.roomObjects[connection.room]
+                possibleConnections.push(connection.room2)
+            else if room==@data.roomObjects[connection.room2]
+                possibleConnections.push(connection.room)
+        rand = possibleConnections[Math.floor(Math.random() * possibleConnections.length)]
+        return @data.roomObjects[rand]
     encounterMonsters: (adventurer, room) =>
         @doCombat(adventurer,room)
         if adventurer.hp<=0
@@ -815,7 +982,8 @@ app.service 'dungeon', class Dungeon
         result = false
         while result==false
             [x,y,facing] = @pickRandomWall()
-            result = @data.map.excavate(x,y,facing)
+            [result,boundaries] = @data.map.excavate(x,y,facing)
+        return boundaries
     pickRandomWall: =>
         facing = null
         while facing==null
@@ -833,7 +1001,103 @@ app.service 'dungeon', class Dungeon
         if @data.map.tiles[x+1][y]==' '
             return 1
         return null
-
+    formRoomConnections: =>
+        @data.connections = []
+        for i in [0..@data.roomObjects.length-1]
+            for j in [0..@data.roomObjects.length-1]
+                room = @data.roomObjects[i]
+                room2 = @data.roomObjects[j]
+                if @roomsConnected(room,room2)
+                    obj = new RoomConnection
+                    obj.room = i
+                    obj.room2 = j
+                    if !@checkIfConnectionExists(obj)
+                        @data.connections.push(obj)
+    roomsConnected: (room, room2) =>
+        if room==room2
+            return false
+        if !@roomsAdjacent(room,room2)
+            return false
+        doorLocations = @findDoors(room)
+        if @checkDoorAdjacency(doorLocations,room2)
+            return true
+        return false
+    findDoors: (room) =>
+        results = []
+        #check left side
+        x = room.boundaries[0]-1
+        for y in [room.boundaries[1]..room.boundaries[3]]
+            if @data.map.tiles[x][y]==' '
+                results.push([x,y])
+        #check right side
+        x = room.boundaries[2]+1
+        for y in [room.boundaries[1]..room.boundaries[3]]
+            if @data.map.tiles[x][y]==' '
+                results.push([x,y])
+        #check top
+        y = room.boundaries[1]-1
+        for x in [room.boundaries[0]..room.boundaries[2]]
+            if @data.map.tiles[x][y]==' '
+                results.push([x,y])
+        #check bottom
+        y = room.boundaries[3]+1
+        for x in [room.boundaries[0]..room.boundaries[2]]
+            if @data.map.tiles[x][y]==' '
+                results.push([x,y])
+        return results
+    checkDoorAdjacency: (doorLocations,room2) =>
+        for coords in doorLocations
+            [x,y] = coords
+            #check left side
+            x2 = room2.boundaries[0]-1
+            for y2 in [room2.boundaries[1]..room2.boundaries[3]]
+                if x==x2 and y==y2
+                    return true
+            #check right side
+            x2 = room2.boundaries[2]+1
+            for y2 in [room2.boundaries[1]..room2.boundaries[3]]
+                if x==x2 and y==y2
+                    return true
+            #check top
+            y2 = room2.boundaries[1]-1
+            for x2 in [room2.boundaries[0]..room2.boundaries[2]]
+                if x==x2 and y==y2
+                    return true
+            #check bottom
+            y2 = room2.boundaries[3]+1
+            for x2 in [room2.boundaries[0]..room2.boundaries[2]]
+                if x==x2 and y==y2
+                    return true
+        return false
+    roomsAdjacent: (room,room2) =>
+        #check left side
+        x = room.boundaries[0]-2
+        for y in [room.boundaries[1]..room.boundaries[3]]
+            if x==room2.boundaries[2] and y>=room2.boundaries[1] and y<=room2.boundaries[3]
+                return true
+        #check right side
+        x = room.boundaries[2]+2
+        for y in [room.boundaries[1]..room.boundaries[3]]
+            if x==room2.boundaries[0] and y>=room2.boundaries[1] and y<=room2.boundaries[3]
+                return true
+        #check top
+        y = room.boundaries[1]-2
+        for x in [room.boundaries[0]..room.boundaries[2]]
+            if y==room2.boundaries[3] and x>=room2.boundaries[0] and x<=room2.boundaries[2]
+                return true
+        #check bottom
+        y = room.boundaries[3]+2
+        for x in [room.boundaries[0]..room.boundaries[2]]
+            if y==room2.boundaries[1] and x>=room2.boundaries[0] and x<=room2.boundaries[2]
+                return true
+        return false
+    checkIfConnectionExists: (obj) =>
+        for connection in @data.connections
+            if connection.room==obj.room and connection.room2==obj.room2
+                return true
+            else if connection.room2==obj.room and connection.room2==obj.room
+                return true
+        return false
 class DungeonData
     
 app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
@@ -1089,6 +1353,7 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
             obj.firstTick = true
             obj.lastTickTime = moment().valueOf()
             window.simulator.data = obj
+            window.simulator.formRoomConnections()
             $rootScope.save()
     $rootScope.load()
 # app.directive 'tab', ->
@@ -1248,6 +1513,7 @@ class Room
         @size = 5
         @occupantType = unitTypes.none
         @monsters = []
+        @boundaries = []
 class Map
     constructor: ->
         @sizeX = 64
@@ -1256,7 +1522,7 @@ class Map
         @tiles = []
         @border = 1
         @initFillMap()
-        @digInitialRoom()
+        @initialRoomBoundaries = @digInitialRoom()
     initFillMap: ->
         for i in [0..@sizeX-1]
             @tiles[i]=[]
@@ -1268,6 +1534,7 @@ class Map
         for i in [rollX..rollX+@roomDimensions-1]
             for j in [rollY..rollY+@roomDimensions-1]
                 @tiles[i][j]=' '
+        return [rollX,rollY,rollX+@roomDimensions-1,rollY+@roomDimensions-1]
     excavate: (x,y,facing) ->
         [xStep,yStep] = @determineStep(facing)
         [xMax,yMax] = @determineBounds(x,y,xStep,yStep,facing)
@@ -1280,14 +1547,14 @@ class Map
         for i in [xStart-xStep..xMax+xStep] by xStep
             for j in [yStart-yStep..yMax+yStep] by yStep
                 if @tiles[i]==undefined
-                    return false
+                    return [false,undefined]
                 if @tiles[i][j]!='W'
-                    return false
+                    return [false,undefined]
         [x,y]=@excavateDoor(x,y,xStep,yStep,facing)
         for i in [x..xMax] by xStep
             for j in [y..yMax] by yStep
                 @tiles[i][j]=' '
-        return true
+        return [true,[Math.min(x,xMax),Math.min(y,yMax),Math.max(x,xMax),Math.max(y,yMax)]]
     excavateDoor: (x,y,xStep,yStep,facing) =>
         valid = false
         while valid==false
@@ -1331,6 +1598,9 @@ class Map
             return [x+(xStep*(@roomDimensions-1)),y+(yStep*(@roomDimensions))]
         if facing==1 or facing==3
             return [x+(xStep*(@roomDimensions)),y+(yStep*(@roomDimensions-1))]
+class RoomConnection
+    @room = -1
+    @room2 = -1
 unitTypes =
     none: -1
     minion: 0
