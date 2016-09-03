@@ -347,8 +347,8 @@
         </uib-tab>
     </uib-tabset>
     <div style="position: absolute; bottom: 0; width: 400px">
-    </div>
     <div uib-alert id='alerts' style="width: 400px" ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')" close="closeAlert($index)" dismiss-on-timeout="10000" ng-hide="alert.expired=='true'">{{alert.msg}}
+    </div>
     </div>
   </body>
 </html>

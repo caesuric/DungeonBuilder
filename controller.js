@@ -1787,7 +1787,9 @@
     $scope.closeAlert = function(index) {
       $scope.alerts[index].expired = "true";
       return setTimeout((function() {
-        $scope.alerts.splice(index, 1);
+        if ($scope.alerts[index] !== void 0) {
+          $scope.alerts.splice(index, 1);
+        }
       }), 500);
     };
     $scope.setDevMultiplier = function() {

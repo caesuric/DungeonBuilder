@@ -1000,7 +1000,8 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
     $scope.closeAlert = (index) ->
         $scope.alerts[index].expired = "true"
         setTimeout (->
-            $scope.alerts.splice(index,1)
+            if $scope.alerts[index]!=undefined
+                $scope.alerts.splice(index,1)
             return
         ), 500
     $scope.setDevMultiplier = ->
