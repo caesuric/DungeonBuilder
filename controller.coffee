@@ -998,14 +998,14 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
     $scope.$watch 'dungeon.emptyRooms()', (newVal) ->
         $scope.emptyRooms = newVal
     $scope.closeAlert = (index) ->
-        $scope.alerts[index].expired = "true"
-        setTimeout (->
-            if $scope.alerts[index]!=undefined
+        if $scope.alerts[index]!=undefined
+            $scope.alerts[index].expired = "true"
+            setTimeout (->
                 $scope.alerts.splice(index,1)
-            return
-        ), 500
+                return
+            ), 500
     $scope.setDevMultiplier = ->
-        $scope.dungeon.devMultiplier = @devMultiplier
+        $scope.dungeon.data.devMultiplier = @devMultiplier
     $scope.timeSkip = ->
         days = @skipDays
         hours = (days*24) + @skipHours
@@ -1271,8 +1271,14 @@ class Map
     excavate: (x,y,facing) ->
         [xStep,yStep] = @determineStep(facing)
         [xMax,yMax] = @determineBounds(x,y,xStep,yStep,facing)
-        for i in [x..xMax] by xStep
-            for j in [y..yMax] by yStep
+        if facing==0 or facing==2 #bottom, top
+            xStart=x
+            yStart=y+yStep
+        else if facing==1 or facing==3 #left, right
+            xStart=x+xStep
+            yStart=y
+        for i in [xStart-xStep..xMax+xStep] by xStep
+            for j in [yStart-yStep..yMax+yStep] by yStep
                 if @tiles[i]==undefined
                     return false
                 if @tiles[i][j]!='W'

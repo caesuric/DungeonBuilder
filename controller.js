@@ -1785,15 +1785,15 @@
       return $scope.emptyRooms = newVal;
     });
     $scope.closeAlert = function(index) {
-      $scope.alerts[index].expired = "true";
-      return setTimeout((function() {
-        if ($scope.alerts[index] !== void 0) {
+      if ($scope.alerts[index] !== void 0) {
+        $scope.alerts[index].expired = "true";
+        return setTimeout((function() {
           $scope.alerts.splice(index, 1);
-        }
-      }), 500);
+        }), 500);
+      }
     };
     $scope.setDevMultiplier = function() {
-      return $scope.dungeon.devMultiplier = this.devMultiplier;
+      return $scope.dungeon.data.devMultiplier = this.devMultiplier;
     };
     $scope.timeSkip = function() {
       var days, hours, i, j, k, minutes, monster, ref, results, seconds, ticks;
@@ -2194,11 +2194,18 @@
     };
 
     Map.prototype.excavate = function(x, y, facing) {
-      var i, j, k, l, m, n, ref, ref1, ref10, ref11, ref12, ref13, ref14, ref2, ref3, ref4, ref5, ref6, ref7, ref8, ref9, xMax, xStep, yMax, yStep;
+      var i, j, k, l, m, n, ref, ref1, ref10, ref11, ref12, ref13, ref14, ref2, ref3, ref4, ref5, ref6, ref7, ref8, ref9, xMax, xStart, xStep, yMax, yStart, yStep;
       ref = this.determineStep(facing), xStep = ref[0], yStep = ref[1];
       ref1 = this.determineBounds(x, y, xStep, yStep, facing), xMax = ref1[0], yMax = ref1[1];
-      for (i = k = ref2 = x, ref3 = xMax, ref4 = xStep; ref4 > 0 ? k <= ref3 : k >= ref3; i = k += ref4) {
-        for (j = l = ref5 = y, ref6 = yMax, ref7 = yStep; ref7 > 0 ? l <= ref6 : l >= ref6; j = l += ref7) {
+      if (facing === 0 || facing === 2) {
+        xStart = x;
+        yStart = y + yStep;
+      } else if (facing === 1 || facing === 3) {
+        xStart = x + xStep;
+        yStart = y;
+      }
+      for (i = k = ref2 = xStart - xStep, ref3 = xMax + xStep, ref4 = xStep; ref4 > 0 ? k <= ref3 : k >= ref3; i = k += ref4) {
+        for (j = l = ref5 = yStart - yStep, ref6 = yMax + yStep, ref7 = yStep; ref7 > 0 ? l <= ref6 : l >= ref6; j = l += ref7) {
           if (this.tiles[i] === void 0) {
             return false;
           }
