@@ -743,7 +743,7 @@
       } else if (occupants === unitTypes.bigMinion || occupants === unitTypes.bigMonster || occupants === unitTypes.bigAcolyte) {
         text = +'3';
       } else if (occupants === unitTypes.hugeMinion || occupants === unitTypes.hugeMonster || occupants === unitTypes.hugeAcolyte) {
-        text = +'3';
+        text = +'4';
       }
       text += ' x';
       text += room.population.toString();

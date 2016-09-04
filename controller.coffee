@@ -385,7 +385,7 @@ app.service 'dungeon', class Dungeon
         else if occupants == unitTypes.bigMinion or occupants == unitTypes.bigMonster or occupants == unitTypes.bigAcolyte
             text=+'3'
         else if occupants == unitTypes.hugeMinion or occupants == unitTypes.hugeMonster or occupants == unitTypes.hugeAcolyte
-            text=+'3'
+            text=+'4'
         text+=' x'
         text+=room.population.toString()
         return [text,color]
