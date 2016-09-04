@@ -27,6 +27,9 @@ app.service 'dungeon', class Dungeon
         @data.smallMinions = 5
         @data.bigMinions = 0
         @data.hugeMinions = 0
+        @data.minionObjects = []
+        for i in [0..@data.smallMinions-1]
+            @data.minionObjects[i]=new SmallMinion()
         @data.monsters = 0
         @data.smallMonsters = 5
         @data.bigMonsters = 0
@@ -38,6 +41,9 @@ app.service 'dungeon', class Dungeon
         @data.smallAcolytes = 5
         @data.bigAcolytes = 0
         @data.hugeAcolytes = 0
+        @data.acolyteObjects = []
+        for i in [0..@data.smallAcolytes-1]
+            @data.acolyteObjects[i]=new SmallAcolyte()
         @data.treasure = 10
         $(document).ready( ->
             CanvasInitializer.initCanvas()
@@ -50,6 +56,8 @@ app.service 'dungeon', class Dungeon
         @data.roomObjects[0].population = 5
         @data.roomObjects[0].size = 10
         @data.roomObjects[0].occupantType = unitTypes.smallMinion
+        for i in [0..@data.smallMinions-1]
+            @data.roomObjects[0].minions[i] = @data.minionObjects[i]
         @data.roomObjects[1] = new Room()
         @data.roomObjects[1].population = 5
         @data.roomObjects[1].size = 10
@@ -61,6 +69,8 @@ app.service 'dungeon', class Dungeon
         @data.roomObjects[2].occupantType = unitTypes.smallAcolyte
         @data.roomObjects[2].population = 5
         @data.roomObjects[2].size = 10
+        for i in [0..@data.smallAcolytes-1]
+            @data.roomObjects[2].acolytes[i] = @data.acolyteObjects[i]
         @data.roomObjects[3] = new Room()
         @data.roomObjects[4] = new Room()
 
@@ -93,6 +103,12 @@ app.service 'dungeon', class Dungeon
         
     tick: =>
         @tickCount += 1
+        for minion in @data.minionObjects
+            for i in [0..@data.devMultiplier-1]
+                @minionTick(minion)
+        for acolyte in @data.acolyteObjects
+            for i in [0..@data.devMultiplier-1]
+                @acolyteTick(acolyte)
         @updateValues()
         @updateRoomBox()
         for monster in @data.monsterObjects
@@ -106,8 +122,17 @@ app.service 'dungeon', class Dungeon
             @megaTick()
     megaTick: =>
         window.rootScope.save()
+    acolyteTick: (acolyte) =>
+        if acolyte.health<acolyte.maxHealth
+            acolyte.health+=1
+        if acolyte.health>=acolyte.maxHealth
+            @data.reputation += acolyte.reputation * @data.devMultiplier * @data.acolyteMultiplier
+    minionTick: (minion) =>
+        if minion.health<minion.maxHealth
+            minion.health+=1
+        if minion.health>= minion.maxHealth
+            @data.roomProgress += minion.labor * @data.devMultiplier * @data.minionMultiplier
     updateValues: =>
-        @data.roomProgress += ((@data.smallMinions)+(@data.minions*16)+(@data.bigMinions*256)+(@data.hugeMinions*4096)) * @data.devMultiplier * @data.minionMultiplier
         if @data.roomProgress >= @roomCost()
             @data.roomProgress -= @roomCost()
             @data.rooms += 1
@@ -115,17 +140,12 @@ app.service 'dungeon', class Dungeon
             @data.roomObjects[@data.rooms-1].boundaries = @digRoom()
             @formRoomConnections()
             @updateRoomCanvas()
-
-        @data.reputation += ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
-
-
         for i in [0..Math.floor(@data.treasure*@data.devMultiplier)-1]
             adventurerRoll = Math.floor((Math.random() * 14500) + 1)
             if adventurerRoll == 14500
                 @runDungeon()
         window.rootScope.$apply()
     updateValuesNoApply: =>
-        @data.roomProgress += ((@data.smallMinions)+(@data.minions*16)+(@data.bigMinions*256)+(@data.hugeMinions*4096)) * @data.devMultiplier * @data.minionMultiplier
         if @data.roomProgress >= @roomCost()
             @data.roomProgress -= @roomCost()
             @data.rooms += 1
@@ -133,10 +153,6 @@ app.service 'dungeon', class Dungeon
             @data.roomObjects[@data.rooms-1].boundaries = @digRoom()
             @formRoomConnections()
             @updateRoomCanvas()
-
-        @data.reputation += ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
-
-
         for i in [0..Math.floor(@data.treasure*@data.devMultiplier)-1]
             adventurerRoll = Math.floor((Math.random() * 14500) + 1)
             if adventurerRoll == 14500
@@ -546,208 +562,250 @@ app.service 'dungeon', class Dungeon
             if @allocateRoom(unitTypes.minion)
                 @data.minions += 1
                 @data.reputation -= @data.cost
+                @updateRoomCanvas()
     buySmallMinion: =>
         smallCost = Math.floor(@data.cost*0.09375)
         if @data.reputation>smallCost
             if @allocateRoom(unitTypes.smallMinion)
                 @data.smallMinions += 1
                 @data.reputation -= smallCost
+                @updateRoomCanvas()
     buyBigMinion: =>
         bigCost = Math.floor(@data.cost*119.42)
         if @data.reputation>bigCost
             if @allocateRoom(unitTypes.bigMinion)
                 @data.bigMinions += 1
                 @data.reputation -= bigCost
+                @updateRoomCanvas()
     buyHugeMinion: =>
         hugeCost = Math.floor(@data.cost*17752.88)
         if @data.reputation>hugeCost
             if @allocateRoom(unitTypes.hugeMinion)
                 @data.hugeMinions += 1
                 @data.reputation -= hugeCost
+                @updateRoomCanvas()
     buyMonster: =>
         if @data.reputation>@data.cost #and @totalPopulation()<@maxPopulation()
             if @allocateRoom(unitTypes.monster)
                 @data.reputation -= @data.cost
                 @data.monsters += 1
+                @updateRoomCanvas()
     buySmallMonster: =>
         smallCost = Math.floor(@data.cost*0.09375)
         if @data.reputation>smallCost
             if @allocateRoom(unitTypes.smallMonster)
                 @data.smallMonsters += 1
                 @data.reputation -= smallCost
+                @updateRoomCanvas()
     buyBigMonster: =>
         bigCost = Math.floor(@data.cost*119.42)
         if @data.reputation>bigCost
             if @allocateRoom(unitTypes.bigMonster)
                 @data.bigMonsters += 1
                 @data.reputation -= bigCost
+                @updateRoomCanvas()
     buyHugeMonster: =>
         hugeCost = Math.floor(@data.cost*17752.88)
         if @data.reputation>hugeCost
             if @allocateRoom(unitTypes.hugeMonster)
                 @data.hugeMonsters += 1
                 @data.reputation -= hugeCost
+                @updateRoomCanvas()
     buyAcolyte: =>
         if @data.reputation>@data.cost #and @totalPopulation()<@maxPopulation()
             if @allocateRoom(unitTypes.acolyte)
                 @data.reputation -= @data.cost
                 @data.acolytes += 1
+                @updateRoomCanvas()
     buySmallAcolyte: =>
         smallCost = Math.floor(@data.cost*0.09375)
         if @data.reputation>smallCost
             if @allocateRoom(unitTypes.smallAcolyte)
                 @data.smallAcolytes += 1
                 @data.reputation -= smallCost
+                @updateRoomCanvas()
     buyBigAcolyte: =>
         bigCost = Math.floor(@data.cost*119.42)
         if @data.reputation>bigCost
             if @allocateRoom(unitTypes.bigAcolyte)
                 @data.bigAcolytes += 1
                 @data.reputation -= bigCost
+                @updateRoomCanvas()
     buyHugeAcolyte: =>
         hugeCost = Math.floor(@data.cost*17752.88)
         if @data.reputation>hugeCost
             if @allocateRoom(unitTypes.hugeAcolyte)
                 @data.hugeAcolytes += 1
                 @data.reputation -= hugeCost
+                @updateRoomCanvas()
     buyAllMinions: =>
         number = @maxNumberToBuy unitTypes.minion
         for i in [0..number-1]
             @buyMinion()
+        @updateRoomCanvas()
     buyAllSmallMinions: =>
         number = @maxNumberToBuy unitTypes.smallMinion
         for i in [0..number-1]
             @buySmallMinion()
+        @updateRoomCanvas()
     buyAllBigMinions: =>
         number = @maxNumberToBuy unitTypes.bigMinion
         for i in [0..number-1]
             @buyBigMinion()
+        @updateRoomCanvas()
     buyAllHugeMinions: =>
         number = @maxNumberToBuy unitTypes.hugeMinion
         for i in [0..number-1]
             @buyHugeMinion()
+        @updateRoomCanvas()
     buyAllMonsters: =>
         number = @maxNumberToBuy unitTypes.monster
         for i in [0..number-1]
             @buyMonster()
+        @updateRoomCanvas()
     buyAllSmallMonsters: =>
         number = @maxNumberToBuy unitTypes.smallMonster
         for i in [0..number-1]
             @buySmallMonster()
+        @updateRoomCanvas()
     buyAllBigMonsters: =>
         number = @maxNumberToBuy unitTypes.bigMonster
         for i in [0..number-1]
             @buyBigMonster()
+        @updateRoomCanvas()
     buyAllHugeMonsters: =>
         number = @maxNumberToBuy unitTypes.hugeMonster
         for i in [0..number-1]
             @buyHugeMonster()
+        @updateRoomCanvas()
     buyAllAcolytes: =>
         number = @maxNumberToBuy unitTypes.acolyte
         for i in [0..number-1]
             @buyAcolyte()
+        @updateRoomCanvas()
     buyAllSmallAcolytes: =>
         number = @maxNumberToBuy unitTypes.smallAcolyte
         for i in [0..number-1]
             @buySmallAcolyte()
+        @updateRoomCanvas()
     buyAllBigAcolytes: =>
         number = @maxNumberToBuy unitTypes.bigAcolyte
         for i in [0..number-1]
             @buyBigAcolyte()
+        @updateRoomCanvas()
     buyAllHugeAcolytes: =>
         number = @maxNumberToBuy unitTypes.hugeAcolyte
         for i in [0..number-1]
             @buyHugeAcolyte()
+        @updateRoomCanvas()
     buyRoomOfSmallMinions: =>
         number = @calculateRoomCapacityForBuyAll(unitTypes.smallMinion, 10)
         if number>0
             for i in [1..number]
                 @buySmallMinion()
+            @updateRoomCanvas()
     buyRoomOfMinions: =>
         number = @calculateRoomCapacityForBuyAll(unitTypes.minion, 5)
         if number>0
             for i in [1..number]
                 @buyMinion()
+            @updateRoomCanvas()
     buyRoomOfBigMinions: =>
         number = @calculateRoomCapacityForBuyAll(unitTypes.bigMinion, 2)
         if number>0
             for i in [1..number]
                 @buyBigMinion()
+            @updateRoomCanvas()
     buyRoomOfSmallMonsters: =>
         number = @calculateRoomCapacityForBuyAll(unitTypes.smallMonster, 10)
         if number>0
             for i in [1..number]
                 @buySmallMonster()
+            @updateRoomCanvas()
     buyRoomOfMonsters: =>
         number = @calculateRoomCapacityForBuyAll(unitTypes.monster, 5)
         if number>0
             for i in [1..number]
                 @buyMonster()
+            @updateRoomCanvas()
     buyRoomOfBigMonsters: =>
         number = @calculateRoomCapacityForBuyAll(unitTypes.bigMonster, 2)
         if number>0
             for i in [1..number]
                 @buyBigMonster()
+            @updateRoomCanvas()
     buyRoomOfSmallAcolytes: =>
         number = @calculateRoomCapacityForBuyAll(unitTypes.smallAcolyte, 10)
         if number>0
             for i in [1..number]
                 @buySmallAcolyte()
+            @updateRoomCanvas()
     buyRoomOfAcolytes: =>
         number = @calculateRoomCapacityForBuyAll(unitTypes.acolyte, 5)
         if number>0
             for i in [1..number]
                 @buyAcolyte()
+            @updateRoomCanvas()
     buyRoomOfBigAcolytes: =>
         number = @calculateRoomCapacityForBuyAll(unitTypes.bigAcolyte, 2)
         if number>0
             for i in [1..number]
                 @buyBigAcolyte()
+            @updateRoomCanvas()
     sellRoomOfSmallMinions: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.smallMinion)
         if number>0
             for i in [1..number]
                 @sellSmallMinion()
+            @updateRoomCanvas()
     sellRoomOfMinions: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.minion)
         if number>0
             for i in [1..number]
                 @sellMinion()
+            @updateRoomCanvas()
     sellRoomOfBigMinions: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.bigMinion)
         if number>0
             for i in [1..number]
                 @sellBigMinion()
+            @updateRoomCanvas()
     sellRoomOfSmallMonsters: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.smallMonster)
         if number>0
             for i in [1..number]
                 @sellSmallMonster()
+            @updateRoomCanvas()
     sellRoomOfMonsters: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.monster)
         if number>0
             for i in [1..number]
                 @sellMonster()
+            @updateRoomCanvas()
     sellRoomOfBigMonsters: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.bigMonster)
         if number>0
             for i in [1..number]
                 @sellBigMonster()
+            @updateRoomCanvas()
     sellRoomOfSmallAcolytes: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.smallAcolyte)
         if number>0
             for i in [1..number]
                 @sellSmallAcolyte()
+            @updateRoomCanvas()
     sellRoomOfAcolytes: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.acolyte)
         if number>0
             for i in [1..number]
                 @sellAcolyte()
+            @updateRoomCanvas()
     sellRoomOfBigAcolytes: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.bigAcolyte)
         if number>0
             for i in [1..number]
                 @sellBigAcolyte()
+            @updateRoomCanvas()
                 
     calculateRoomCapacityForBuyAll: (unitType, max) =>
         number = max+1
@@ -861,6 +919,11 @@ app.service 'dungeon', class Dungeon
             if room.occupantType == unitTypes.monster or room.occupantType == unitTypes.smallMonster or room.occupantType == unitTypes.bigMonster or room.occupantType == unitTypes.hugeMonster
                 if @encounterMonsters(adventurer,room)
                     return
+            else
+                for acolyte in room.acolytes
+                    acolyte.health = 0
+                for minion in room.minions
+                    minion.health = 0
             if room == @data.roomObjects[@data.roomObjects.length-1]
                 hasTreasure = true
             if hasTreasure and room == @data.roomObjects[0]
@@ -948,16 +1011,16 @@ app.service 'dungeon', class Dungeon
             if room.occupantType == unitTypes.none
                 room.occupantType = type
                 room.population += 1
-                @addMonsterToRoom(room)
+                @addUnitObjectToRoom(room)
                 @adjustMaxPopulation(room)
                 return true
             else if room.occupantType == type and room.population < room.size
                 room.population += 1
-                @addMonsterToRoom(room)
+                @addUnitObjectToRoom(room)
                 @adjustMaxPopulation(room)
                 return true
         return false
-    addMonsterToRoom: (room) =>
+    addUnitObjectToRoom: (room) =>
         if room.occupantType == unitTypes.monster or room.occupantType == unitTypes.smallMonster or room.occupantType == unitTypes.bigMonster or room.occupantType == unitTypes.hugeMonster
             if room.occupantType == unitTypes.monster
                 monster = new Monster()
@@ -969,6 +1032,28 @@ app.service 'dungeon', class Dungeon
                 monster = new HugeMonster()
             @data.monsterObjects[@data.monsters+@data.smallMonsters+@data.bigMonsters+@data.hugeMonsters] = monster
             room.monsters[room.population-1] = monster
+        else if room.occupantType == unitTypes.minion or room.occupantType == unitTypes.smallMinion or room.occupantType == unitTypes.bigMinion or room.occupantType == unitTypes.hugeMinion
+            if room.occupantType == unitTypes.minion
+                minion = new Minion()
+            else if room.occupantType == unitTypes.smallMinion
+                minion = new SmallMinion()
+            else if room.occupantType == unitTypes.bigMinion
+                minion = new BigMinion()
+            else if room.occupantType == unitTypes.hugeMinion
+                minion = new HugeMinion()
+            @data.minionObjects[@data.minions+@data.smallMinions+@data.bigMinions+@data.hugeMinions] = minion
+            room.minions[room.population-1] = minion
+        else if room.occupantType == unitTypes.acolyte or room.occupantType == unitTypes.smallAcolyte or room.occupantType == unitTypes.bigAcolyte or room.occupantType == unitTypes.hugeAcolyte
+            if room.occupantType == unitTypes.acolyte
+                acolyte = new Acolyte()
+            else if room.occupantType == unitTypes.smallAcolyte
+                acolyte = new SmallAcolyte()
+            else if room.occupantType == unitTypes.bigAcolyte
+                acolyte = new BigAcolyte()
+            else if room.occupantType == unitTypes.hugeAcolyte
+                acolyte = new HugeAcolyte()
+            @data.acolyteObjects[@data.acolytes+@data.smallAcolytes+@data.bigAcolytes+@data.hugeAcolytes] = acolyte
+            room.acolytes[room.population-1] = acolyte
     adjustMaxPopulation: (room) =>
         if room.occupantType == unitTypes.smallMinion or room.occupantType == unitTypes.smallMonster or room.occupantType == unitTypes.smallAcolyte
             room.size = 10
@@ -1504,6 +1589,40 @@ class HugeMonster extends Monster
         @hp += 28
         @maxHp += 28
         @damage += 1
+class Minion
+    constructor: ->
+        @maxHealth = 2400
+        @health = 2400
+        @labor = 16
+class SmallMinion extends Minion
+    constructor: ->
+        super()
+        @labor = 1
+class BigMinion extends Minion
+    constructor: ->
+        super()
+        @labor = 256
+class HugeMinion extends Minion
+    constructor: ->
+        super()
+        @labor = 4096
+class Acolyte
+    constructor: ->
+        @maxHealth = 2400
+        @health = 2400
+        @reputation = 16
+class SmallAcolyte extends Acolyte
+    constructor: ->
+        super()
+        @reputation = 1
+class BigAcolyte extends Acolyte
+    constructor: ->
+        super()
+        @reputation = 256
+class HugeAcolyte extends Acolyte
+    constructor: ->
+        super()
+        @reputation = 4096
 class Adventurer
     constructor: ->
         @hp = 13
@@ -1513,6 +1632,8 @@ class Room
         @size = 5
         @occupantType = unitTypes.none
         @monsters = []
+        @minions = []
+        @acolytes = []
         @boundaries = []
 class Map
     constructor: ->
