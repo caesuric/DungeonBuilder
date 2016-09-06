@@ -18,6 +18,9 @@ app.service 'dungeon', class Dungeon
         window.simulator = this
         window.rootScope = $rootScope
         @data = new DungeonData()
+        @data.dungeonLevel = 1
+        @data.totalReputationEarned = 0
+        @data.currentTierReputation = 0
         @data.dragMode = false
         @data.dragRoom = null
         @data.dropRoom = null
@@ -50,7 +53,7 @@ app.service 'dungeon', class Dungeon
         )
             
         @data.roomProgress = 0
-        @data.rooms = 5
+        @data.rooms = 6
         @data.roomObjects = []
         @data.roomObjects[0] = new Room()
         @data.roomObjects[0].population = 5
@@ -73,10 +76,12 @@ app.service 'dungeon', class Dungeon
             @data.roomObjects[2].acolytes[i] = @data.acolyteObjects[i]
         @data.roomObjects[3] = new Room()
         @data.roomObjects[4] = new Room()
+        @data.roomObjects[5] = new Room()
+        @data.roomObjects[5].occupantType = unitTypes.treasure
 
         @data.map = new Map()
         @data.roomObjects[0].boundaries = @data.map.initialRoomBoundaries
-        for i in [1..4]
+        for i in [1..5]
             @data.roomObjects[i].boundaries = @digRoom()
         @formRoomConnections()
         @data.adventurers = 0
@@ -130,7 +135,10 @@ app.service 'dungeon', class Dungeon
             if acolyte.health==acolyte.maxHealth
                 @narrate('One of your '+@unitName(acolyte.type)+'s has recovered.')
         if acolyte.health>=acolyte.maxHealth
-            @data.reputation += acolyte.reputation * @data.devMultiplier * @data.acolyteMultiplier
+            rep = acolyte.reputation * @data.devMultiplier * @data.acolyteMultiplier
+            @data.reputation += rep
+            @data.totalReputationEarned += rep
+            @data.currentTierReputation += rep
     minionTick: (minion) =>
         if minion.health<minion.maxHealth
             minion.health+=1
@@ -146,9 +154,12 @@ app.service 'dungeon', class Dungeon
             @data.roomObjects[@data.rooms-1].boundaries = @digRoom()
             @formRoomConnections()
             @updateRoomCanvas()
+        if @data.currentTierReputation >= nextTierReputation[@data.dungeonLevel-1]
+            @data.currentTierReputation -= nextTierReputation[@data.dungeonLevel-1]
+            @data.dungeonLevel += 1
         for i in [0..Math.floor(@data.treasure*@data.devMultiplier)-1]
-            adventurerRoll = Math.floor((Math.random() * 14500) + 1)
-            if adventurerRoll == 14500
+            adventurerRoll = Math.floor((Math.random() * 14500*@data.dungeonLevel) + 1)
+            if adventurerRoll == 14500*@data.dungeonLevel
                 @runDungeon()
         window.rootScope.$apply()
     updateValuesNoApply: =>
@@ -192,7 +203,10 @@ app.service 'dungeon', class Dungeon
         if @data.reputation >= @data.acolyteUpgradeCost
             return '100'
         return (@data.reputation/@data.acolyteUpgradeCost*100).toString()
-
+    tierProgressPercent: =>
+        if @data.currentTierReputation >= nextTierReputation[@data.dungeonLevel-1]
+            return '100'
+        return (@data.currentTierReputation/nextTierReputation[@data.dungeonLevel-1]*100).toString()
     updateRoomBox: =>
         text = "Room Summary:<br><br>"
         for i in [0..@data.rooms-1]
@@ -200,7 +214,7 @@ app.service 'dungeon', class Dungeon
             text += "Room "+(i+1).toString()+":<br>Contains "
             name = @unitName(room.occupantType)
             text += name
-            if name!='nothing'
+            if name!='nothing' and name!= 'treasure'
                 text += 's'
             text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>"
         document.getElementById('roomsPanel').innerHTML = text
@@ -324,9 +338,23 @@ app.service 'dungeon', class Dungeon
         specific += "#{duration.minutes()}m" if duration.minutes() > 0
         specific += "#{duration.seconds()}s" if duration.seconds() > 0
         return specific
-
-
-        
+    tierETA: =>
+        if @data.currentTierReputation > nextTierReputation[@data.dungeonLevel-1]
+            remaining = 0
+        else
+            remaining = nextTierReputation[@data.dungeonLevel-1] - @data.currentTierReputation
+        rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
+        eta = Math.floor(remaining/rate)
+        duration = moment.duration(eta*100) # Setting in milliseconds
+        moment_time = duration.humanize()
+        specific = ""
+        specific += "#{duration.years()}y" if duration.years() > 0
+        specific += "#{duration.months()}M" if duration.months() > 0
+        specific += "#{duration.days()}d" if duration.days() > 0
+        specific += "#{duration.hours()}h" if duration.hours() > 0
+        specific += "#{duration.minutes()}m" if duration.minutes() > 0
+        specific += "#{duration.seconds()}s" if duration.seconds() > 0
+        return specific
     updateProgressBar: (bar, percent) ->
       bar.width("#{percent}%")
       
@@ -340,7 +368,12 @@ app.service 'dungeon', class Dungeon
                     window.canvas.add new fabric.Rect(left: (i*12), top: (j*12), height: 12, width: 12, stroke: 'black', fill: 'black', strokeWidth: 1, selectable: false)
         for i in [0..@data.roomObjects.length-1]
             room = @data.roomObjects[i]
-            window.canvas.add new fabric.Text((i+1).toString(),left: (room.boundaries[0]*12)+30, top: (room.boundaries[1]*12)+30, originX: 'center', originY: 'center', fill: 'white', fontSize: 16, selectable: false)
+            color = 'white'
+            if i==0
+                color = 'cyan'
+            if room.occupantType == unitTypes.treasure
+                color = 'gold'
+            window.canvas.add new fabric.Text((i+1).toString(),left: (room.boundaries[0]*12)+30, top: (room.boundaries[1]*12)+30, originX: 'center', originY: 'center', fill: color, fontWeight: 'bold', fontSize: 16, selectable: false)
             [unitRepresentation,color] = @unitCode(@data.roomObjects[i])
             window.canvas.add new fabric.Text(unitRepresentation,left: (room.boundaries[0]*12), top: (room.boundaries[1]*12), originX: 'left', originY: 'top', fill: color, fontWeight: 'bold', fontSize: 16, selectable: false)
         window.canvas.off()
@@ -352,72 +385,96 @@ app.service 'dungeon', class Dungeon
             window.simulator.roomMouseUp(options)
         window.canvas.renderAll()
         
-        acolyteChartElement = $("#acolyteChart")
-        acolyteChart = new Chart(acolyteChartElement,
-            type: 'pie'
-            data:
-                labels: [
-                    'Small'
-                    'Normal'
-                    'Big'
-                    'Huge'
-                ]
-                datasets: [ {
-                    label: 'Reputation generated'
-                    data: [
-                        @data.smallAcolytes*10
-                        @data.acolytes*160
-                        @data.bigAcolytes*2560
-                        @data.hugeAcolytes*40960
+        if @acolyteChart==undefined
+            acolyteChartElement = $("#acolyteChart")
+            @acolyteChart = new Chart(acolyteChartElement,
+                type: 'pie'
+                data:
+                    labels: [
+                        'Small'
+                        'Normal'
+                        'Big'
+                        'Huge'
                     ]
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)'
-                        'rgba(54, 162, 235, 0.2)'
-                        'rgba(255, 206, 86, 0.2)'
-                        'rgba(75, 192, 192, 0.2)'
+                    datasets: [ {
+                        label: 'Reputation Generated'
+                        data: [
+                            Math.floor(@data.smallAcolytes*10*@data.acolyteMultiplier*@data.devMultiplier)
+                            Math.floor(@data.acolytes*160*@data.acolyteMultiplier*@data.devMultiplier)
+                            Math.floor(@data.bigAcolytes*2560*@data.acolyteMultiplier*@data.devMultiplier)
+                            Math.floor(@data.hugeAcolytes*40960*@data.acolyteMultiplier*@data.devMultiplier)
+                        ]
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)'
+                            'rgba(54, 162, 235, 0.2)'
+                            'rgba(255, 206, 86, 0.2)'
+                            'rgba(75, 192, 192, 0.2)'
+                        ]
+                        borderColor: [
+                            'rgba(255,99,132,1)'
+                            'rgba(54, 162, 235, 1)'
+                            'rgba(255, 206, 86, 1)'
+                            'rgba(75, 192, 192, 1)'
+                        ]
+                        borderWidth: 0
+                    } ]
+                options:
+                    title:
+                        display: true
+                        text: 'Reputation Generated'
+                )
+            minionChartElement = $("#minionChart")
+            @minionChart = new Chart(minionChartElement,
+                type: 'pie'
+                data:
+                    labels: [
+                        'Small'
+                        'Normal'
+                        'Big'
+                        'Huge'
                     ]
-                    borderColor: [
-                        'rgba(255,99,132,1)'
-                        'rgba(54, 162, 235, 1)'
-                        'rgba(255, 206, 86, 1)'
-                        'rgba(75, 192, 192, 1)'
-                    ]
-                    borderWidth: 0
-                } ]
-            )
-        minionChartElement = $("#minionChart")
-        minionChart = new Chart(minionChartElement,
-            type: 'pie'
-            data:
-                labels: [
-                    'Small'
-                    'Normal'
-                    'Big'
-                    'Huge'
-                ]
-                datasets: [ {
-                    label: 'Reputation generated'
-                    data: [
-                        @data.smallMinions*10
-                        @data.minions*160
-                        @data.bigMinions*2560
-                        @data.hugeMinions*40960
-                    ]
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)'
-                        'rgba(54, 162, 235, 0.2)'
-                        'rgba(255, 206, 86, 0.2)'
-                        'rgba(75, 192, 192, 0.2)'
-                    ]
-                    borderColor: [
-                        'rgba(255,99,132,1)'
-                        'rgba(54, 162, 235, 1)'
-                        'rgba(255, 206, 86, 1)'
-                        'rgba(75, 192, 192, 1)'
-                    ]
-                    borderWidth: 0
-                } ]
-            )
+                    datasets: [ {
+                        label: 'Labor Generated'
+                        data: [
+                            Math.floor(@data.smallMinions*10*@data.minionMultiplier*@data.devMultiplier)
+                            Math.floor(@data.minions*160*@data.minionMultiplier*@data.devMultiplier)
+                            Math.floor(@data.bigMinions*2560*@data.minionMultiplier*@data.devMultiplier)
+                            Math.floor(@data.hugeMinions*40960*@data.minionMultiplier*@data.devMultiplier)
+                        ]
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)'
+                            'rgba(54, 162, 235, 0.2)'
+                            'rgba(255, 206, 86, 0.2)'
+                            'rgba(75, 192, 192, 0.2)'
+                        ]
+                        borderColor: [
+                            'rgba(255,99,132,1)'
+                            'rgba(54, 162, 235, 1)'
+                            'rgba(255, 206, 86, 1)'
+                            'rgba(75, 192, 192, 1)'
+                        ]
+                        borderWidth: 0
+                    } ]
+                options:
+                    title:
+                        display: true
+                        text: 'Labor Generated'
+                )
+        else
+            @acolyteChart.data.datasets[0].data = [
+                Math.floor(@data.smallAcolytes*10*@data.acolyteMultiplier*@data.devMultiplier)
+                Math.floor(@data.acolytes*160*@data.acolyteMultiplier*@data.devMultiplier)
+                Math.floor(@data.bigAcolytes*2560*@data.acolyteMultiplier*@data.devMultiplier)
+                Math.floor(@data.hugeAcolytes*40960*@data.acolyteMultiplier*@data.devMultiplier)
+            ]
+            @acolyteChart.update()
+            @minionChart.data.datasets[0].data = [
+                Math.floor(@data.smallMinions*10*@data.minionMultiplier*@data.devMultiplier)
+                Math.floor(@data.minions*160*@data.minionMultiplier*@data.devMultiplier)
+                Math.floor(@data.bigMinions*2560*@data.minionMultiplier*@data.devMultiplier)
+                Math.floor(@data.hugeMinions*40960*@data.minionMultiplier*@data.devMultiplier)
+            ]
+            @minionChart.update()
 
     unitCode: (room) =>
         occupants = room.occupantType
@@ -430,14 +487,16 @@ app.service 'dungeon', class Dungeon
         else if occupants == unitTypes.smallAcolyte or occupants == unitTypes.acolyte or occupants == unitTypes.bigAcolyte or occupants == unitTypes.hugeAcolyte
             text='A'
             color='cyan'
+        else if occupants == unitTypes.treasure
+            return ['Tr','gold']
         if occupants == unitTypes.smallMinion or occupants == unitTypes.smallMonster or occupants == unitTypes.smallAcolyte
-            text+='1'
+            text+='-1'
         else if occupants == unitTypes.minion or occupants == unitTypes.monster or occupants == unitTypes.acolyte
-            text+='2'
+            text+='-2'
         else if occupants == unitTypes.bigMinion or occupants == unitTypes.bigMonster or occupants == unitTypes.bigAcolyte
-            text+='3'
+            text+='-3'
         else if occupants == unitTypes.hugeMinion or occupants == unitTypes.hugeMonster or occupants == unitTypes.hugeAcolyte
-            text+='4'
+            text+='-4'
         text+=' x'
         text+=room.population.toString()
         return [text,color]
@@ -520,7 +579,7 @@ app.service 'dungeon', class Dungeon
         text +="<br>Contains "
         name = @unitName(room.occupantType)
         text += name
-        if name!='nothing'
+        if name!='nothing' and name!='treasure'
             text += 's'
         text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>"
         div.html text
@@ -550,7 +609,7 @@ app.service 'dungeon', class Dungeon
         normalUnits = @data.minions+@data.monsters+@data.acolytes
         bigUnits = @data.bigMinions+@data.bigMonsters+@data.bigAcolytes
         hugeUnits = @data.hugeMinions+@data.hugeMonsters+@data.hugeAcolytes
-        return (smallUnits*5)+(normalUnits*10)+(bigUnits*25)+(hugeUnits*50)
+        return (smallUnits*5)+(normalUnits*10)+(bigUnits*25)+(hugeUnits*50)+50
         # return @data.minions+@data.monsters+@data.acolytes+@data.smallMinions+@data.bigMinions+@data.smallMonsters+@data.bigMonsters+@data.smallAcolytes+@data.bigAcolytes
     maxPopulation: =>
         # count = 0
@@ -561,7 +620,7 @@ app.service 'dungeon', class Dungeon
     emptyRooms: =>
         count = 0
         for room in @data.roomObjects
-            if room.population == 0
+            if room.population == 0 and room.occupantType != unitTypes.treasure
                 count += 1
         return count
     availablePopulation: =>
@@ -855,7 +914,7 @@ app.service 'dungeon', class Dungeon
         if number == max+1
             return 0
         else
-            return number
+            return Math.min(number,@maxNumberToBuy(unitType))
     calculateRoomCapacityForSellAll: (unitType) =>
         number = 999
         for room in @data.roomObjects
@@ -922,12 +981,14 @@ app.service 'dungeon', class Dungeon
             @data.minionUpgradeNumber += 1
             @data.minionMultiplier = @data.minionMultiplier*1.2
             @data.minionUpgradeCost = Math.floor(@data.minionUpgradeCost*2*1.2)
+            @updateRoomCanvas()
     upgradeAcolytes: =>
         if @data.reputation >= @data.acolyteUpgradeCost
             @data.reputation -= @data.acolyteUpgradeCost
             @data.acolyteUpgradeNumber += 1
             @data.acolyteMultiplier = @data.acolyteMultiplier*1.2
             @data.acolyteUpgradeCost = Math.floor(@data.acolyteUpgradeCost*2*1.2)
+            @updateRoomCanvas()
     optimizeRemoval: (type) =>
         roomSelected = null
         for room in @data.roomObjects
@@ -947,8 +1008,8 @@ app.service 'dungeon', class Dungeon
         if roomSelected.population == 0
             roomSelected.occupantType = unitTypes.none
     runDungeon: =>
-        @narrate('An adventurer arrives!')
-        adventurer = new Adventurer()
+        @narrate('A level '+@data.dungeonLevel.toString()+' adventurer arrives!')
+        adventurer = new Adventurer(@data.dungeonLevel)
         done = false
         room = null
         hasTreasure = false
@@ -964,7 +1025,7 @@ app.service 'dungeon', class Dungeon
                     acolyte.health = 0
                 for minion in room.minions
                     minion.health = 0
-            if room == @data.roomObjects[@data.roomObjects.length-1]
+            if room.occupantType == unitTypes.treasure
                 hasTreasure = true
             if hasTreasure and room == @data.roomObjects[0]
                 done = true
@@ -999,6 +1060,8 @@ app.service 'dungeon', class Dungeon
                 return 'huge acolyte'
             when unitTypes.hugeMonster
                 return 'huge monster'
+            when unitTypes.treasure
+                return 'treasure'
             else
                 return 'nothing'
     traverseRooms: (room) =>
@@ -1025,7 +1088,7 @@ app.service 'dungeon', class Dungeon
             while adventurer.hp>0 and @anyMonstersActive(room)
                 if turnRoll==1
                     monster = @monsterWithLowestHp(room)
-                    monster.hp -= Math.floor((Math.random() * 8) + 3)
+                    monster.hp -= (Math.floor((Math.random() * 8) + 3)*adventurer.damageMultiplier)
                     turnRoll = 2
                     if monster.hp<=0
                         monster.hp = 0
@@ -1266,6 +1329,15 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
     $scope.buyAllSmallMinionsText = ""
     $scope.buyAllBigMinionsText = ""
     $scope.buyAllHugeMinionsText = ""
+    $scope.buyRoomOfSmallMinionsText = ""
+    $scope.buyRoomOfMinionsText = ""
+    $scope.buyRoomOfBigMinionsText = ""
+    $scope.buyRoomOfSmallMonstersText = ""
+    $scope.buyRoomOfMonstersText = ""
+    $scope.buyRoomOfBigMonstersText = ""
+    $scope.buyRoomOfSmallAcolytesText = ""
+    $scope.buyRoomOfAcolytesText = ""
+    $scope.buyRoomOfBigAcolytesText = ""
     $scope.population = 0
     $scope.maxPopulation = 0
     $scope.roomProgressPercent = 0
@@ -1321,6 +1393,10 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
     $scope.enableAlerts = true
     $scope.acolyteMultiplier = 0
     $scope.minionMultiplier = 0
+    $scope.dungeonLevel = 0
+    $scope.tierProgressPercent = 0
+    $scope.tierProgressPercentRounded = 0
+    $scope.tierETA = ""
     $scope.$watch 'dungeon.data.reputation', (newVal) ->
         $scope.reputation = humanize(Math.floor(newVal))
         $scope.buyAllMinionsText = "Buy All (#{dungeon.maxNumberToBuy unitTypes.minion})"
@@ -1335,6 +1411,15 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
         $scope.buyAllSmallAcolytesText = "Buy All (#{dungeon.maxNumberToBuy unitTypes.smallAcolyte})"
         $scope.buyAllBigAcolytesText = "Buy All (#{dungeon.maxNumberToBuy unitTypes.bigAcolyte})"
         $scope.buyAllHugeAcolytesText = "Buy All (#{dungeon.maxNumberToBuy unitTypes.hugeAcolyte})"
+        $scope.buyRoomOfSmallMinionsText = "Fill Room (#{dungeon.calculateRoomCapacityForBuyAll(unitTypes.smallMinion,10)})"
+        $scope.buyRoomOfMinionsText = "Fill Room (#{dungeon.calculateRoomCapacityForBuyAll(unitTypes.minion,5)})"
+        $scope.buyRoomOfBigMinionsText = "Fill Room (#{dungeon.calculateRoomCapacityForBuyAll(unitTypes.bigMinion,2)})"
+        $scope.buyRoomOfSmallMonstersText = "Fill Room (#{dungeon.calculateRoomCapacityForBuyAll(unitTypes.smallMonster,10)})"
+        $scope.buyRoomOfMonstersText = "Fill Room (#{dungeon.calculateRoomCapacityForBuyAll(unitTypes.monster,5)})"
+        $scope.buyRoomOfBigMonstersText = "Fill Room (#{dungeon.calculateRoomCapacityForBuyAll(unitTypes.bigMonster,2)})"
+        $scope.buyRoomOfSmallAcolytesText = "Fill Room (#{dungeon.calculateRoomCapacityForBuyAll(unitTypes.smallAcolyte,10)})"
+        $scope.buyRoomOfAcolytesText = "Fill Room (#{dungeon.calculateRoomCapacityForBuyAll(unitTypes.acolyte,5)})"
+        $scope.buyRoomOfBigAcolytesText = "Fill Room (#{dungeon.calculateRoomCapacityForBuyAll(unitTypes.bigAcolyte,2)})"
     $scope.$watch 'dungeon.reputationRate()', (newVal) ->
         $scope.reputationRate = humanize(newVal)
     $scope.$watch 'dungeon.data.minions', (newVal) ->
@@ -1369,10 +1454,10 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
         $scope.minionUpgradeProgressPercentRounded = Math.floor(newVal)
     $scope.$watch 'dungeon.acolyteUpgradeProgressPercent()', (newVal) ->
         $scope.acolyteUpgradeProgressPercent = newVal
-        $scope.acolyteUpgradeProgressPercentRounded = Math.floor(newVal)        
+        $scope.acolyteUpgradeProgressPercentRounded = Math.floor(newVal)
     $scope.$watch 'dungeon.data.rooms', (newVal) ->
         $scope.rooms = newVal
-        if $scope.rooms > 5 and $scope.enableAlerts==true
+        if $scope.rooms > 6 and $scope.enableAlerts==true
             $scope.alerts.push({type: 'success', msg: 'Room constructed!', expired: "false"})
     $scope.$watch 'dungeon.roomETA()', (newVal) ->
         $scope.roomETA = newVal
@@ -1420,6 +1505,13 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
         $scope.minionMultiplier = Math.floor(newVal*100)
     $scope.$watch 'dungeon.data.acolyteMultiplier', (newVal) ->
         $scope.acolyteMultiplier = Math.floor(newVal*100)
+    $scope.$watch 'dungeon.data.dungeonLevel', (newVal) ->
+        $scope.dungeonLevel = newVal
+    $scope.$watch 'dungeon.tierProgressPercent()', (newVal) ->
+        $scope.tierProgressPercent = newVal
+        $scope.tierProgressPercentRounded = Math.floor(newVal)
+    $scope.$watch 'dungeon.tierETA()', (newVal) ->
+        $scope.tierETA = newVal
     $scope.closeAlert = (index) ->
         if $scope.alerts[index]!=undefined
             $scope.alerts[index].expired = "true"
@@ -1705,8 +1797,21 @@ class HugeAcolyte extends Acolyte
         @reputation = 4096
         @type = unitTypes.hugeAcolyte
 class Adventurer
-    constructor: ->
-        @hp = 13
+    constructor: (level) ->
+        multiplier = @getMultiplier (level)
+        @hp = 13*multiplier
+        @damageMultiplier = multiplier
+    getMultiplier: (level) ->
+        if level==1
+            return 1
+        else if level==2
+            return 2
+        else if level==3
+            return 4
+        else if level==4
+            return 12
+        else
+            return 12
 class Room
     constructor: ->
         @population = 0
@@ -1817,6 +1922,7 @@ unitTypes =
     hugeMinion: 9
     hugeMonster: 10
     hugeAcolyte: 11
+    treasure: 12
 guid = ->
     s4 = ->
         Math.floor((1 + Math.random()) * 0x10000).toString(16).substring 1
@@ -1834,3 +1940,8 @@ humanize = (num) ->
         return (Math.round(num/1000 * 100) / 100).toString()+'k'
     else
         return num.toString()
+nextTierReputation = [4500,22000,215000, 1000000000000000000000000000000000000000000]
+# L1 - 5 small monsters
+# L2 - 10 small monsters
+# L3 - 20 smmll monsters
+# L4 - 15 monsters
