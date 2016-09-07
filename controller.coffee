@@ -1,24 +1,25 @@
 CanvasInitializer=
     initCanvas: ->
-        window.viewSize = 768
+        document.viewSize = 768
         mainCanvasContainer = document.getElementById('mainCanvasContainer')
         mainCanvasContainer.style.width = @viewSize
         mainCanvasContainer.style.height = @viewSize
-        window.canvas = new fabric.Canvas('mainCanvas', {width: @viewSize, height: @viewSize})
-        window.canvas.backgroundColor="black"
-        window.canvas.selection = false
-        window.canvas.stateful = false
-        window.canvas.renderOnAddRemove = false
-        window.canvas.skipTargetFind = true
-        window.canvas.renderAll()
+        document.canvas = new fabric.Canvas('mainCanvas', {width: @viewSize, height: @viewSize})
+        document.canvas.backgroundColor="black"
+        document.canvas.selection = false
+        document.canvas.stateful = false
+        document.canvas.renderOnAddRemove = false
+        document.canvas.skipTargetFind = true
+        document.canvas.renderAll()
 
 app = angular.module('dungeonBuilder', ['ui.bootstrap', 'ngCookies', 'ngAnimate'])
 app.service 'dungeon', class Dungeon
     constructor: ($rootScope) ->
-        window.simulator = this
-        window.rootScope = $rootScope
+        document.simulator = this
+        document.rootScope = $rootScope
         @data = new DungeonData()
         @data.dungeonLevel = 1
+        @data.dungeonOpen = true
         @data.totalReputationEarned = 0
         @data.currentTierReputation = 0
         @data.dragMode = false
@@ -128,12 +129,13 @@ app.service 'dungeon', class Dungeon
             @tickCount = 0
             @megaTick()
     megaTick: =>
-        window.rootScope.save()
+        document.rootScope.save()
     acolyteTick: (acolyte) =>
         if acolyte.health<acolyte.maxHealth
             acolyte.health+=1
             if acolyte.health==acolyte.maxHealth
                 @narrate('One of your '+@unitName(acolyte.type)+'s has recovered.')
+                @updateRoomCanvas()
         if acolyte.health>=acolyte.maxHealth
             rep = acolyte.reputation * @data.devMultiplier * @data.acolyteMultiplier
             @data.reputation += rep
@@ -144,6 +146,7 @@ app.service 'dungeon', class Dungeon
             minion.health+=1
             if minion.health==minion.maxHealth
                 @narrate('One of your '+@unitName(minion.type)+'s has recovered.')
+                @updateRoomCanvas()
         if minion.health>= minion.maxHealth
             @data.roomProgress += minion.labor * @data.devMultiplier * @data.minionMultiplier
     updateValues: =>
@@ -157,11 +160,12 @@ app.service 'dungeon', class Dungeon
         if @data.currentTierReputation >= nextTierReputation[@data.dungeonLevel-1]
             @data.currentTierReputation -= nextTierReputation[@data.dungeonLevel-1]
             @data.dungeonLevel += 1
+            @narrate("Your dungeon's level has increased to "+@data.dungeonLevel.toString()+"!")
         for i in [0..Math.floor(@data.treasure*@data.devMultiplier)-1]
-            adventurerRoll = Math.floor((Math.random() * 14500*@data.dungeonLevel) + 1)
-            if adventurerRoll == 14500*@data.dungeonLevel
+            adventurerRoll = Math.floor((Math.random() * 14500) + 1)
+            if adventurerRoll == 14500 and @data.dungeonOpen
                 @runDungeon()
-        window.rootScope.$apply()
+        document.rootScope.$apply()
     updateValuesNoApply: =>
         if @data.roomProgress >= @roomCost()
             @data.roomProgress -= @roomCost()
@@ -355,17 +359,35 @@ app.service 'dungeon', class Dungeon
         specific += "#{duration.minutes()}m" if duration.minutes() > 0
         specific += "#{duration.seconds()}s" if duration.seconds() > 0
         return specific
+    recoveryETA: (number) =>
+        if number>2400
+            remaining = 0
+        else
+            remaining = 2400-number
+        rate = 1
+        eta = Math.floor(remaining/rate)
+        duration = moment.duration(eta*100) # Setting in milliseconds
+        moment_time = duration.humanize()
+        specific = ""
+        specific += "#{duration.years()}y" if duration.years() > 0
+        specific += "#{duration.months()}M" if duration.months() > 0
+        specific += "#{duration.days()}d" if duration.days() > 0
+        specific += "#{duration.hours()}h" if duration.hours() > 0
+        specific += "#{duration.minutes()}m" if duration.minutes() > 0
+        specific += "#{duration.seconds()}s" if duration.seconds() > 0
+        return specific
+
     updateProgressBar: (bar, percent) ->
       bar.width("#{percent}%")
       
     updateRoomCanvas: ->
         console.log('updating')
-        window.canvas.clear()
-        window.canvas.setBackgroundColor('gray')
+        document.canvas.clear()
+        document.canvas.setBackgroundColor('gray')
         for i in [0..@data.map.sizeX-1]
             for j in [0..@data.map.sizeY-1]
                 if @data.map.tiles[i][j]==' '
-                    window.canvas.add new fabric.Rect(left: (i*12), top: (j*12), height: 12, width: 12, stroke: 'black', fill: 'black', strokeWidth: 1, selectable: false)
+                    document.canvas.add new fabric.Rect(left: (i*12), top: (j*12), height: 12, width: 12, stroke: 'black', fill: 'black', strokeWidth: 1, selectable: false)
         for i in [0..@data.roomObjects.length-1]
             room = @data.roomObjects[i]
             color = 'white'
@@ -373,17 +395,17 @@ app.service 'dungeon', class Dungeon
                 color = 'cyan'
             if room.occupantType == unitTypes.treasure
                 color = 'gold'
-            window.canvas.add new fabric.Text((i+1).toString(),left: (room.boundaries[0]*12)+30, top: (room.boundaries[1]*12)+30, originX: 'center', originY: 'center', fill: color, fontWeight: 'bold', fontSize: 16, selectable: false)
+            document.canvas.add new fabric.Text((i+1).toString(),left: (room.boundaries[0]*12)+30, top: (room.boundaries[1]*12)+30, originX: 'center', originY: 'center', fill: color, fontWeight: 'bold', fontSize: 16, selectable: false)
             [unitRepresentation,color] = @unitCode(@data.roomObjects[i])
-            window.canvas.add new fabric.Text(unitRepresentation,left: (room.boundaries[0]*12), top: (room.boundaries[1]*12), originX: 'left', originY: 'top', fill: color, fontWeight: 'bold', fontSize: 16, selectable: false)
-        window.canvas.off()
-        window.canvas.on 'mouse:move', (options) ->
-            window.simulator.roomMouseOver(options)
-        window.canvas.on 'mouse:down', (options) ->
-            window.simulator.roomMouseDown(options)
-        window.canvas.on 'mouse:up', (options) ->
-            window.simulator.roomMouseUp(options)
-        window.canvas.renderAll()
+            document.canvas.add new fabric.Text(unitRepresentation,left: (room.boundaries[0]*12), top: (room.boundaries[1]*12), originX: 'left', originY: 'top', fill: color, fontWeight: 'bold', fontSize: 16, selectable: false)
+        document.canvas.off()
+        document.canvas.on 'mouse:move', (options) ->
+            document.simulator.roomMouseOver(options)
+        document.canvas.on 'mouse:down', (options) ->
+            document.simulator.roomMouseDown(options)
+        document.canvas.on 'mouse:up', (options) ->
+            document.simulator.roomMouseUp(options)
+        document.canvas.renderAll()
         
         if @acolyteChart==undefined
             acolyteChartElement = $("#acolyteChart")
@@ -478,17 +500,34 @@ app.service 'dungeon', class Dungeon
 
     unitCode: (room) =>
         occupants = room.occupantType
+        if occupants==unitTypes.none
+            return ['','black']
+        allDisabled = true
         if occupants == unitTypes.smallMinion or occupants == unitTypes.minion or occupants == unitTypes.bigMinion or occupants == unitTypes.hugeMinion
             text='Mi'
             color='yellow'
+            for minion in room.minions
+                if minion.health>=minion.maxHealth
+                    allDisabled = false
+                    break
         else if occupants == unitTypes.smallMonster or occupants == unitTypes.monster or occupants == unitTypes.bigMonster or occupants == unitTypes.hugeMonster
             text='Mo'
             color='red'
+            for monster in room.monsters
+                if monster.health>=monster.maxHealth
+                    allDisabled = false
+                    break
         else if occupants == unitTypes.smallAcolyte or occupants == unitTypes.acolyte or occupants == unitTypes.bigAcolyte or occupants == unitTypes.hugeAcolyte
             text='A'
             color='cyan'
+            for acolyte in room.acolytes
+                if acolyte.health>=acolyte.maxHealth
+                    allDisabled = false
+                    break
         else if occupants == unitTypes.treasure
             return ['Tr','gold']
+        if allDisabled
+            color='gray'
         if occupants == unitTypes.smallMinion or occupants == unitTypes.smallMonster or occupants == unitTypes.smallAcolyte
             text+='-1'
         else if occupants == unitTypes.minion or occupants == unitTypes.monster or occupants == unitTypes.acolyte
@@ -505,16 +544,16 @@ app.service 'dungeon', class Dungeon
         y = options.e.layerY
         if @data.dragMode
             if @data.dragBox != null
-                window.canvas.remove @data.dragBox
+                document.canvas.remove @data.dragBox
             if @data.dragText != null
-                window.canvas.remove @data.dragText
+                document.canvas.remove @data.dragText
             @data.dragBox = new fabric.Rect(left: x, top: y, height: 60, width: 60, stroke: 'black', fill: 'black', strokeWidth: 1, selectable: false)
             room = @data.roomObjects[@data.dragRoom]
             [unitRepresentation,color] = @unitCode(room)
             @data.dragText = new fabric.Text(unitRepresentation,left: x, top: y, originX: 'left', originY: 'top', fill: color, fontWeight: 'bold', fontSize: 16, selectable: false)
-            window.canvas.add @data.dragBox
-            window.canvas.add @data.dragText
-            window.canvas.renderAll()
+            document.canvas.add @data.dragBox
+            document.canvas.add @data.dragText
+            document.canvas.renderAll()
             @hidePopup()
             return
         for i in [0..@data.roomObjects.length-1]
@@ -582,12 +621,29 @@ app.service 'dungeon', class Dungeon
         if name!='nothing' and name!='treasure'
             text += 's'
         text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>"
+        text +=@getDisabledText(room)
         div.html text
         return
     hidePopup: =>
         div = $('#roomTooltip')
         div.css({visibility: 'hidden'})
         return
+    getDisabledText: (room) =>
+        text = ''
+        type = room.occupantType
+        if type==unitTypes.monster or type==unitTypes.smallMonster or type==unitTypes.bigMonster or type==unitTypes.hugeMonster
+            for monster in room.monsters
+                if monster.health<monster.maxHealth
+                    text += 'Disabled unit: Recovery in '+@recoveryETA(monster.health)+'.<br />'
+        else if type==unitTypes.acolyte or type==unitTypes.smallAcolyte or type==unitTypes.bigAcolyte or type==unitTypes.hugeAcolyte
+            for acolyte in room.acolytes
+                if acolyte.health<acolyte.maxHealth
+                    text += 'Disabled unit: Recovery in '+@recoveryETA(acolyte.health)+'.<br />'
+        else if type==unitTypes.minion or type==unitTypes.smallMinion or type==unitTypes.bigMinion or type==unitTypes.hugeMinion
+            for minion in room.minions
+                if minion.health<minion.maxHealth
+                    text += 'Disabled unit: Recovery in '+@recoveryETA(minion.health)+'.<br />'
+        return text
     roomCost: =>
         costToBuild = 14528
         if @data.rooms >= 100
@@ -1003,7 +1059,22 @@ app.service 'dungeon', class Dungeon
             for i in [0..roomSelected.monsters.length-1]
                 monster = roomSelected.monsters[i]
                 if monster.type==type
+                    @data.monsterObjects.splice(@data.monsterObjects.indexOf(monster),1)
                     roomSelected.monsters.splice(i,1)
+                    break
+        else if type==unitTypes.acolyte or type==unitTypes.smallAcolyte or type==unitTypes.bigAcolyte or type==unitTypes.hugeAcolyte
+            for i in [0..roomSelected.acolytes.length-1]
+                acolyte = roomSelected.acolytes[i]
+                if acolyte.type==type
+                    @data.acolyteObjects.splice(@data.acolyteObjects.indexOf(acolyte),1)
+                    roomSelected.acolytes.splice(i,1)
+                    break
+        else if type==unitTypes.minion or type==unitTypes.smallMinion or type==unitTypes.bigMinion or type==unitTypes.hugeMinion
+            for i in [0..roomSelected.minions.length-1]
+                minion = roomSelected.minions[i]
+                if minion.type==type
+                    @data.minionObjects.splice(@data.minionObjects.indexOf(minion),1)
+                    roomSelected.minions.splice(i,1)
                     break
         if roomSelected.population == 0
             roomSelected.occupantType = unitTypes.none
@@ -1316,7 +1387,8 @@ app.service 'dungeon', class Dungeon
         return false
 class DungeonData
     
-app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
+app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
+    document.scope = $scope
     $scope.cookies = $cookies
     $scope.dungeon = dungeon
     $scope.reputation = 0
@@ -1397,6 +1469,7 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
     $scope.tierProgressPercent = 0
     $scope.tierProgressPercentRounded = 0
     $scope.tierETA = ""
+    $scope.closeDungeonText = "Close Dungeon"
     $scope.$watch 'dungeon.data.reputation', (newVal) ->
         $scope.reputation = humanize(Math.floor(newVal))
         $scope.buyAllMinionsText = "Buy All (#{dungeon.maxNumberToBuy unitTypes.minion})"
@@ -1459,6 +1532,9 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
         $scope.rooms = newVal
         if $scope.rooms > 6 and $scope.enableAlerts==true
             $scope.alerts.push({type: 'success', msg: 'Room constructed!', expired: "false"})
+    $scope.$watch 'dungeon.data.dungeonLevel', (newVal) ->
+        if $scope.enableAlerts and newVal!=1
+            $scope.alerts.push({type: 'danger', msg: 'Your dungeon is now level '+newVal.toString()+'!', expired: "false"})
     $scope.$watch 'dungeon.roomETA()', (newVal) ->
         $scope.roomETA = newVal
     $scope.$watch 'dungeon.unitETA()', (newVal) ->
@@ -1547,12 +1623,21 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
             $scope.enableAlerts = false
         else if @enableAlerts == false
             $scope.enableAlerts = true
+    $scope.closeDungeon = ->
+        if @dungeon.data.dungeonOpen == true
+            @dungeon.data.dungeonOpen = false
+            $scope.alerts.push({type: 'success', msg: 'Dungeon closed!', expired: "false"})
+            $scope.closeDungeonText = "Open Dungeon"
+        else if @dungeon.data.dungeonOpen == false
+            @dungeon.data.dungeonOpen = true
+            $scope.alerts.push({type: 'danger', msg: 'Dungeon open for business!', expired: "false"})
+            $scope.closeDungeonText = "Close Dungeon"
     $scope.wipeOutSaveFile = ->
         console.log('deleting save')
         localStorage.removeItem('dungeon')
     $rootScope.save = ->
         console.log('saving')
-        obj = window.simulator.data
+        obj = document.simulator.data
         serialized = JSON.stringify(obj)
         localStorage.setItem('dungeon',serialized)
         if $scope.enableAlerts==true
@@ -1592,7 +1677,20 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
                             if monster2!=undefined and monster2!=null and monster.uuid==monster2.uuid
                                 room.monsters[j]=newMob
                     obj.monsterObjects[i] = newMob
-                        
+                for i in [0..obj.minionObjects.length-1]
+                    minion = obj.minionObjects[i]
+                    for room in obj.roomObjects
+                        if room.minions.length>0
+                            for j in [0..room.minions.length-1]
+                                if room.minions[j].uuid==minion.uuid
+                                    room.minions[j] = minion
+                for i in [0..obj.acolyteObjects.length-1]
+                    acolyte = obj.acolyteObjects[i]
+                    for room in obj.roomObjects
+                        if room.acolytes.length>0
+                            for j in [0..room.acolytes.length-1]
+                                if room.acolytes[j].uuid==acolyte.uuid
+                                    room.acolytes[j] = acolyte  
             newMap = new Map()
             newMap.sizeX = obj.map.sizeX
             newMap.sizeY = obj.map.sizeY
@@ -1602,8 +1700,8 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies) ->
             obj.map = newMap
             obj.firstTick = true
             obj.lastTickTime = moment().valueOf()
-            window.simulator.data = obj
-            window.simulator.formRoomConnections()
+            document.simulator.data = obj
+            document.simulator.formRoomConnections()
             $rootScope.save()
     $rootScope.load()
 # app.directive 'tab', ->
@@ -1663,7 +1761,8 @@ class Monster
             @health += 1
             if @health==@maxHealth
                 @hp = @maxHp
-                window.simulator.narrate('One of your monsters has recovered.')
+                document.simulator.narrate('One of your monsters has recovered.')
+                document.simulator.updateRoomCanvas()
         if @hp < @maxHp
             roll = Math.floor((Math.random() * 160) + 1)
             if roll==160
@@ -1681,7 +1780,7 @@ class Monster
                 @levelUp()
     levelUp: =>
         @level += 1
-        window.simulator.narrate('One of your monsters has attained level '+@level.toString()+'!')
+        document.simulator.narrate('One of your monsters has attained level '+@level.toString()+'!')
         @hp += 7
         @maxHp += 7
         @damage += 1
@@ -1697,14 +1796,14 @@ class SmallMonster extends Monster
             @health += 1
             if @health==@maxHealth
                 @hp = @maxHp
-                window.simulator.narrate('One of your monsters has recovered.')
+                document.simulator.narrate('One of your monsters has recovered.')
         if @hp < @maxHp
             roll = Math.floor((Math.random() * 640) + 1)
             if roll==640
                 @hp += 1
     levelUp: =>
         @level += 1
-        window.simulator.narrate('One of your small monsters has attained level '+@level.toString()+'!')
+        document.simulator.narrate('One of your small monsters has attained level '+@level.toString()+'!')
         @hp += 2
         @maxHp += 2
         @damage += 1
@@ -1720,14 +1819,14 @@ class BigMonster extends Monster
             @health += 1
             if @health==@maxHealth
                 @hp = @maxHp
-                window.simulator.narrate('One of your monsters has recovered.')
+                document.simulator.narrate('One of your monsters has recovered.')
         if @hp < @maxHp
             roll = Math.floor((Math.random() * 40) + 1)
             if roll==40
                 @hp += 1
     levelUp: =>
         @level += 1
-        window.simulator.narrate('One of your big monsters has attained level '+@level.toString()+'!')
+        document.simulator.narrate('One of your big monsters has attained level '+@level.toString()+'!')
         @hp += 7
         @maxHp += 7
         @damage += 1
@@ -1743,14 +1842,14 @@ class HugeMonster extends Monster
             @health += 1
             if @health==@maxHealth
                 @hp = @maxHp
-                window.simulator.narrate('One of your monsters has recovered.')
+                document.simulator.narrate('One of your monsters has recovered.')
         if @hp < @maxHp
             roll = Math.floor((Math.random() * 10) + 1)
             if roll==10
                 @hp += 1
     levelUp: =>
         @level += 1
-        window.simulator.narrate('One of your huge monsters has attained level '+@level.toString()+'!')
+        document.simulator.narrate('One of your huge monsters has attained level '+@level.toString()+'!')
         @hp += 28
         @maxHp += 28
         @damage += 1
@@ -1760,6 +1859,7 @@ class Minion
         @health = 2400
         @labor = 16
         @type = unitTypes.minion
+        @uuid = guid()
 class SmallMinion extends Minion
     constructor: ->
         super()
@@ -1781,6 +1881,7 @@ class Acolyte
         @health = 2400
         @reputation = 16
         @type = unitTypes.acolyte
+        @uuid = guid()
 class SmallAcolyte extends Acolyte
     constructor: ->
         super()
@@ -1802,16 +1903,49 @@ class Adventurer
         @hp = 13*multiplier
         @damageMultiplier = multiplier
     getMultiplier: (level) ->
-        if level==1
-            return 1
-        else if level==2
-            return 2
-        else if level==3
-            return 4
-        else if level==4
-            return 12
-        else
-            return 12
+        table = [
+            1
+            2
+            3
+            4
+            5
+            6
+            8
+            10
+            12
+            15
+            18
+            22
+            27
+            33
+            40
+            48
+            58
+            70
+            84
+            101
+            122
+            147
+            177
+            213
+            256
+            307
+            369
+            443
+            532
+            639
+            767
+            921
+            1106
+            1328
+            1594
+            1913
+            2296
+            2756
+            3276
+            3276
+        ]
+        return table[level-1]
 class Room
     constructor: ->
         @population = 0
@@ -1940,8 +2074,4 @@ humanize = (num) ->
         return (Math.round(num/1000 * 100) / 100).toString()+'k'
     else
         return num.toString()
-nextTierReputation = [4500,22000,215000, 1000000000000000000000000000000000000000000]
-# L1 - 5 small monsters
-# L2 - 10 small monsters
-# L3 - 20 smmll monsters
-# L4 - 15 monsters
+nextTierReputation = [4500,7300,14700,71600,121207,143400,242414,363621,484828,606035,727242,848450,969657,1090864,1212071,1333279,1454486,1575693,1696900,1818107,1939314,2060521,2181729,2302936,2424143,20854802,41709604,62564406,83419208,104274010,125128813,145983615,166838417,187693219,208548021,229402824,250257626,271112428, 1000000000000000000000000000000000000000000]

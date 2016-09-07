@@ -31,6 +31,7 @@
               <uib-progressbar class="progress-bar-custom" value="tierProgressPercent">{{tierETA}} {{tierProgressPercentRounded}}%</uib-progressbar>
               Space: <span id="population" ng-bind="population"></span>/<span id="maxPopulation" ng-bind="maxPopulation"></span><br/>
               Empty rooms: <span ng-bind="emptyRooms"></span><br />
+              <button type="button" ng-click="closeDungeon()" ng-bind="closeDungeonText">Close Dungeon</button><br />
             </div>
             <div class="unitBox">
               Minions dig additional rooms in your dungeon.<br/>

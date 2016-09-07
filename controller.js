@@ -8,20 +8,20 @@
   CanvasInitializer = {
     initCanvas: function() {
       var mainCanvasContainer;
-      window.viewSize = 768;
+      document.viewSize = 768;
       mainCanvasContainer = document.getElementById('mainCanvasContainer');
       mainCanvasContainer.style.width = this.viewSize;
       mainCanvasContainer.style.height = this.viewSize;
-      window.canvas = new fabric.Canvas('mainCanvas', {
+      document.canvas = new fabric.Canvas('mainCanvas', {
         width: this.viewSize,
         height: this.viewSize
       });
-      window.canvas.backgroundColor = "black";
-      window.canvas.selection = false;
-      window.canvas.stateful = false;
-      window.canvas.renderOnAddRemove = false;
-      window.canvas.skipTargetFind = true;
-      return window.canvas.renderAll();
+      document.canvas.backgroundColor = "black";
+      document.canvas.selection = false;
+      document.canvas.stateful = false;
+      document.canvas.renderOnAddRemove = false;
+      document.canvas.skipTargetFind = true;
+      return document.canvas.renderAll();
     }
   };
 
@@ -117,9 +117,11 @@
       this.maxPopulation = bind(this.maxPopulation, this);
       this.totalPopulation = bind(this.totalPopulation, this);
       this.roomCost = bind(this.roomCost, this);
+      this.getDisabledText = bind(this.getDisabledText, this);
       this.hidePopup = bind(this.hidePopup, this);
       this.displayPopup = bind(this.displayPopup, this);
       this.unitCode = bind(this.unitCode, this);
+      this.recoveryETA = bind(this.recoveryETA, this);
       this.tierETA = bind(this.tierETA, this);
       this.acolyteUpgradeETA = bind(this.acolyteUpgradeETA, this);
       this.minionUpgradeETA = bind(this.minionUpgradeETA, this);
@@ -148,10 +150,11 @@
       this.tick = bind(this.tick, this);
       this.catchUp = bind(this.catchUp, this);
       var i, k, l, m, n, o, p, q, ref, ref1, ref2, ref3, ref4, ref5;
-      window.simulator = this;
-      window.rootScope = $rootScope;
+      document.simulator = this;
+      document.rootScope = $rootScope;
       this.data = new DungeonData();
       this.data.dungeonLevel = 1;
+      this.data.dungeonOpen = true;
       this.data.totalReputationEarned = 0;
       this.data.currentTierReputation = 0;
       this.data.dragMode = false;
@@ -287,7 +290,7 @@
     };
 
     Dungeon.prototype.megaTick = function() {
-      return window.rootScope.save();
+      return document.rootScope.save();
     };
 
     Dungeon.prototype.acolyteTick = function(acolyte) {
@@ -296,6 +299,7 @@
         acolyte.health += 1;
         if (acolyte.health === acolyte.maxHealth) {
           this.narrate('One of your ' + this.unitName(acolyte.type) + 's has recovered.');
+          this.updateRoomCanvas();
         }
       }
       if (acolyte.health >= acolyte.maxHealth) {
@@ -311,6 +315,7 @@
         minion.health += 1;
         if (minion.health === minion.maxHealth) {
           this.narrate('One of your ' + this.unitName(minion.type) + 's has recovered.');
+          this.updateRoomCanvas();
         }
       }
       if (minion.health >= minion.maxHealth) {
@@ -331,14 +336,15 @@
       if (this.data.currentTierReputation >= nextTierReputation[this.data.dungeonLevel - 1]) {
         this.data.currentTierReputation -= nextTierReputation[this.data.dungeonLevel - 1];
         this.data.dungeonLevel += 1;
+        this.narrate("Your dungeon's level has increased to " + this.data.dungeonLevel.toString() + "!");
       }
       for (i = k = 0, ref = Math.floor(this.data.treasure * this.data.devMultiplier) - 1; 0 <= ref ? k <= ref : k >= ref; i = 0 <= ref ? ++k : --k) {
-        adventurerRoll = Math.floor((Math.random() * 14500 * this.data.dungeonLevel) + 1);
-        if (adventurerRoll === 14500 * this.data.dungeonLevel) {
+        adventurerRoll = Math.floor((Math.random() * 14500) + 1);
+        if (adventurerRoll === 14500 && this.data.dungeonOpen) {
           this.runDungeon();
         }
       }
-      return window.rootScope.$apply();
+      return document.rootScope.$apply();
     };
 
     Dungeon.prototype.updateValuesNoApply = function() {
@@ -704,6 +710,39 @@
       return specific;
     };
 
+    Dungeon.prototype.recoveryETA = function(number) {
+      var duration, eta, moment_time, rate, remaining, specific;
+      if (number > 2400) {
+        remaining = 0;
+      } else {
+        remaining = 2400 - number;
+      }
+      rate = 1;
+      eta = Math.floor(remaining / rate);
+      duration = moment.duration(eta * 100);
+      moment_time = duration.humanize();
+      specific = "";
+      if (duration.years() > 0) {
+        specific += (duration.years()) + "y";
+      }
+      if (duration.months() > 0) {
+        specific += (duration.months()) + "M";
+      }
+      if (duration.days() > 0) {
+        specific += (duration.days()) + "d";
+      }
+      if (duration.hours() > 0) {
+        specific += (duration.hours()) + "h";
+      }
+      if (duration.minutes() > 0) {
+        specific += (duration.minutes()) + "m";
+      }
+      if (duration.seconds() > 0) {
+        specific += (duration.seconds()) + "s";
+      }
+      return specific;
+    };
+
     Dungeon.prototype.updateProgressBar = function(bar, percent) {
       return bar.width(percent + "%");
     };
@@ -711,12 +750,12 @@
     Dungeon.prototype.updateRoomCanvas = function() {
       var acolyteChartElement, color, i, j, k, l, m, minionChartElement, ref, ref1, ref2, ref3, room, unitRepresentation;
       console.log('updating');
-      window.canvas.clear();
-      window.canvas.setBackgroundColor('gray');
+      document.canvas.clear();
+      document.canvas.setBackgroundColor('gray');
       for (i = k = 0, ref = this.data.map.sizeX - 1; 0 <= ref ? k <= ref : k >= ref; i = 0 <= ref ? ++k : --k) {
         for (j = l = 0, ref1 = this.data.map.sizeY - 1; 0 <= ref1 ? l <= ref1 : l >= ref1; j = 0 <= ref1 ? ++l : --l) {
           if (this.data.map.tiles[i][j] === ' ') {
-            window.canvas.add(new fabric.Rect({
+            document.canvas.add(new fabric.Rect({
               left: i * 12,
               top: j * 12,
               height: 12,
@@ -738,7 +777,7 @@
         if (room.occupantType === unitTypes.treasure) {
           color = 'gold';
         }
-        window.canvas.add(new fabric.Text((i + 1).toString(), {
+        document.canvas.add(new fabric.Text((i + 1).toString(), {
           left: (room.boundaries[0] * 12) + 30,
           top: (room.boundaries[1] * 12) + 30,
           originX: 'center',
@@ -749,7 +788,7 @@
           selectable: false
         }));
         ref3 = this.unitCode(this.data.roomObjects[i]), unitRepresentation = ref3[0], color = ref3[1];
-        window.canvas.add(new fabric.Text(unitRepresentation, {
+        document.canvas.add(new fabric.Text(unitRepresentation, {
           left: room.boundaries[0] * 12,
           top: room.boundaries[1] * 12,
           originX: 'left',
@@ -760,17 +799,17 @@
           selectable: false
         }));
       }
-      window.canvas.off();
-      window.canvas.on('mouse:move', function(options) {
-        return window.simulator.roomMouseOver(options);
+      document.canvas.off();
+      document.canvas.on('mouse:move', function(options) {
+        return document.simulator.roomMouseOver(options);
       });
-      window.canvas.on('mouse:down', function(options) {
-        return window.simulator.roomMouseDown(options);
+      document.canvas.on('mouse:down', function(options) {
+        return document.simulator.roomMouseDown(options);
       });
-      window.canvas.on('mouse:up', function(options) {
-        return window.simulator.roomMouseUp(options);
+      document.canvas.on('mouse:up', function(options) {
+        return document.simulator.roomMouseUp(options);
       });
-      window.canvas.renderAll();
+      document.canvas.renderAll();
       if (this.acolyteChart === void 0) {
         acolyteChartElement = $("#acolyteChart");
         this.acolyteChart = new Chart(acolyteChartElement, {
@@ -825,19 +864,50 @@
     };
 
     Dungeon.prototype.unitCode = function(room) {
-      var color, occupants, text;
+      var acolyte, allDisabled, color, k, l, len, len1, len2, m, minion, monster, occupants, ref, ref1, ref2, text;
       occupants = room.occupantType;
+      if (occupants === unitTypes.none) {
+        return ['', 'black'];
+      }
+      allDisabled = true;
       if (occupants === unitTypes.smallMinion || occupants === unitTypes.minion || occupants === unitTypes.bigMinion || occupants === unitTypes.hugeMinion) {
         text = 'Mi';
         color = 'yellow';
+        ref = room.minions;
+        for (k = 0, len = ref.length; k < len; k++) {
+          minion = ref[k];
+          if (minion.health >= minion.maxHealth) {
+            allDisabled = false;
+            break;
+          }
+        }
       } else if (occupants === unitTypes.smallMonster || occupants === unitTypes.monster || occupants === unitTypes.bigMonster || occupants === unitTypes.hugeMonster) {
         text = 'Mo';
         color = 'red';
+        ref1 = room.monsters;
+        for (l = 0, len1 = ref1.length; l < len1; l++) {
+          monster = ref1[l];
+          if (monster.health >= monster.maxHealth) {
+            allDisabled = false;
+            break;
+          }
+        }
       } else if (occupants === unitTypes.smallAcolyte || occupants === unitTypes.acolyte || occupants === unitTypes.bigAcolyte || occupants === unitTypes.hugeAcolyte) {
         text = 'A';
         color = 'cyan';
+        ref2 = room.acolytes;
+        for (m = 0, len2 = ref2.length; m < len2; m++) {
+          acolyte = ref2[m];
+          if (acolyte.health >= acolyte.maxHealth) {
+            allDisabled = false;
+            break;
+          }
+        }
       } else if (occupants === unitTypes.treasure) {
         return ['Tr', 'gold'];
+      }
+      if (allDisabled) {
+        color = 'gray';
       }
       if (occupants === unitTypes.smallMinion || occupants === unitTypes.smallMonster || occupants === unitTypes.smallAcolyte) {
         text += '-1';
@@ -859,10 +929,10 @@
       y = options.e.layerY;
       if (this.data.dragMode) {
         if (this.data.dragBox !== null) {
-          window.canvas.remove(this.data.dragBox);
+          document.canvas.remove(this.data.dragBox);
         }
         if (this.data.dragText !== null) {
-          window.canvas.remove(this.data.dragText);
+          document.canvas.remove(this.data.dragText);
         }
         this.data.dragBox = new fabric.Rect({
           left: x,
@@ -886,9 +956,9 @@
           fontSize: 16,
           selectable: false
         });
-        window.canvas.add(this.data.dragBox);
-        window.canvas.add(this.data.dragText);
-        window.canvas.renderAll();
+        document.canvas.add(this.data.dragBox);
+        document.canvas.add(this.data.dragText);
+        document.canvas.renderAll();
         this.hidePopup();
         return;
       }
@@ -979,6 +1049,7 @@
         text += 's';
       }
       text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>";
+      text += this.getDisabledText(room);
       div.html(text);
     };
 
@@ -988,6 +1059,38 @@
       div.css({
         visibility: 'hidden'
       });
+    };
+
+    Dungeon.prototype.getDisabledText = function(room) {
+      var acolyte, k, l, len, len1, len2, m, minion, monster, ref, ref1, ref2, text, type;
+      text = '';
+      type = room.occupantType;
+      if (type === unitTypes.monster || type === unitTypes.smallMonster || type === unitTypes.bigMonster || type === unitTypes.hugeMonster) {
+        ref = room.monsters;
+        for (k = 0, len = ref.length; k < len; k++) {
+          monster = ref[k];
+          if (monster.health < monster.maxHealth) {
+            text += 'Disabled unit: Recovery in ' + this.recoveryETA(monster.health) + '.<br />';
+          }
+        }
+      } else if (type === unitTypes.acolyte || type === unitTypes.smallAcolyte || type === unitTypes.bigAcolyte || type === unitTypes.hugeAcolyte) {
+        ref1 = room.acolytes;
+        for (l = 0, len1 = ref1.length; l < len1; l++) {
+          acolyte = ref1[l];
+          if (acolyte.health < acolyte.maxHealth) {
+            text += 'Disabled unit: Recovery in ' + this.recoveryETA(acolyte.health) + '.<br />';
+          }
+        }
+      } else if (type === unitTypes.minion || type === unitTypes.smallMinion || type === unitTypes.bigMinion || type === unitTypes.hugeMinion) {
+        ref2 = room.minions;
+        for (m = 0, len2 = ref2.length; m < len2; m++) {
+          minion = ref2[m];
+          if (minion.health < minion.maxHealth) {
+            text += 'Disabled unit: Recovery in ' + this.recoveryETA(minion.health) + '.<br />';
+          }
+        }
+      }
+      return text;
     };
 
     Dungeon.prototype.roomCost = function() {
@@ -1672,7 +1775,7 @@
     };
 
     Dungeon.prototype.optimizeRemoval = function(type) {
-      var i, k, l, len, monster, ref, ref1, room, roomSelected;
+      var acolyte, i, k, l, len, m, minion, monster, n, ref, ref1, ref2, ref3, room, roomSelected;
       roomSelected = null;
       ref = this.data.roomObjects;
       for (k = 0, len = ref.length; k < len; k++) {
@@ -1691,7 +1794,26 @@
         for (i = l = 0, ref1 = roomSelected.monsters.length - 1; 0 <= ref1 ? l <= ref1 : l >= ref1; i = 0 <= ref1 ? ++l : --l) {
           monster = roomSelected.monsters[i];
           if (monster.type === type) {
+            this.data.monsterObjects.splice(this.data.monsterObjects.indexOf(monster), 1);
             roomSelected.monsters.splice(i, 1);
+            break;
+          }
+        }
+      } else if (type === unitTypes.acolyte || type === unitTypes.smallAcolyte || type === unitTypes.bigAcolyte || type === unitTypes.hugeAcolyte) {
+        for (i = m = 0, ref2 = roomSelected.acolytes.length - 1; 0 <= ref2 ? m <= ref2 : m >= ref2; i = 0 <= ref2 ? ++m : --m) {
+          acolyte = roomSelected.acolytes[i];
+          if (acolyte.type === type) {
+            this.data.acolyteObjects.splice(this.data.acolyteObjects.indexOf(acolyte), 1);
+            roomSelected.acolytes.splice(i, 1);
+            break;
+          }
+        }
+      } else if (type === unitTypes.minion || type === unitTypes.smallMinion || type === unitTypes.bigMinion || type === unitTypes.hugeMinion) {
+        for (i = n = 0, ref3 = roomSelected.minions.length - 1; 0 <= ref3 ? n <= ref3 : n >= ref3; i = 0 <= ref3 ? ++n : --n) {
+          minion = roomSelected.minions[i];
+          if (minion.type === type) {
+            this.data.minionObjects.splice(this.data.minionObjects.indexOf(minion), 1);
+            roomSelected.minions.splice(i, 1);
             break;
           }
         }
@@ -2181,7 +2303,8 @@
 
   })();
 
-  app.controller('main', function($scope, dungeon, $rootScope, $cookies) {
+  app.controller('main', function($scope, dungeon, $rootScope, $cookies, $window) {
+    document.scope = $scope;
     $scope.cookies = $cookies;
     $scope.dungeon = dungeon;
     $scope.reputation = 0;
@@ -2262,6 +2385,7 @@
     $scope.tierProgressPercent = 0;
     $scope.tierProgressPercentRounded = 0;
     $scope.tierETA = "";
+    $scope.closeDungeonText = "Close Dungeon";
     $scope.$watch('dungeon.data.reputation', function(newVal) {
       $scope.reputation = humanize(Math.floor(newVal));
       $scope.buyAllMinionsText = "Buy All (" + (dungeon.maxNumberToBuy(unitTypes.minion)) + ")";
@@ -2341,6 +2465,15 @@
         return $scope.alerts.push({
           type: 'success',
           msg: 'Room constructed!',
+          expired: "false"
+        });
+      }
+    });
+    $scope.$watch('dungeon.data.dungeonLevel', function(newVal) {
+      if ($scope.enableAlerts && newVal !== 1) {
+        return $scope.alerts.push({
+          type: 'danger',
+          msg: 'Your dungeon is now level ' + newVal.toString() + '!',
           expired: "false"
         });
       }
@@ -2485,6 +2618,25 @@
         return $scope.enableAlerts = true;
       }
     };
+    $scope.closeDungeon = function() {
+      if (this.dungeon.data.dungeonOpen === true) {
+        this.dungeon.data.dungeonOpen = false;
+        $scope.alerts.push({
+          type: 'success',
+          msg: 'Dungeon closed!',
+          expired: "false"
+        });
+        return $scope.closeDungeonText = "Open Dungeon";
+      } else if (this.dungeon.data.dungeonOpen === false) {
+        this.dungeon.data.dungeonOpen = true;
+        $scope.alerts.push({
+          type: 'danger',
+          msg: 'Dungeon open for business!',
+          expired: "false"
+        });
+        return $scope.closeDungeonText = "Close Dungeon";
+      }
+    };
     $scope.wipeOutSaveFile = function() {
       console.log('deleting save');
       return localStorage.removeItem('dungeon');
@@ -2492,7 +2644,7 @@
     $rootScope.save = function() {
       var obj, serialized;
       console.log('saving');
-      obj = window.simulator.data;
+      obj = document.simulator.data;
       serialized = JSON.stringify(obj);
       localStorage.setItem('dungeon', serialized);
       if ($scope.enableAlerts === true) {
@@ -2504,7 +2656,7 @@
       }
     };
     $rootScope.load = function() {
-      var i, j, k, l, len, m, monster, monster2, newMap, newMob, obj, ref, ref1, ref2, room;
+      var acolyte, i, j, k, l, len, len1, len2, m, minion, monster, monster2, n, newMap, newMob, o, obj, p, q, r, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7, ref8, room, s;
       console.log('attempting to load');
       obj = localStorage.getItem('dungeon');
       if (obj !== null) {
@@ -2544,6 +2696,34 @@
             }
             obj.monsterObjects[i] = newMob;
           }
+          for (i = n = 0, ref3 = obj.minionObjects.length - 1; 0 <= ref3 ? n <= ref3 : n >= ref3; i = 0 <= ref3 ? ++n : --n) {
+            minion = obj.minionObjects[i];
+            ref4 = obj.roomObjects;
+            for (o = 0, len1 = ref4.length; o < len1; o++) {
+              room = ref4[o];
+              if (room.minions.length > 0) {
+                for (j = p = 0, ref5 = room.minions.length - 1; 0 <= ref5 ? p <= ref5 : p >= ref5; j = 0 <= ref5 ? ++p : --p) {
+                  if (room.minions[j].uuid === minion.uuid) {
+                    room.minions[j] = minion;
+                  }
+                }
+              }
+            }
+          }
+          for (i = q = 0, ref6 = obj.acolyteObjects.length - 1; 0 <= ref6 ? q <= ref6 : q >= ref6; i = 0 <= ref6 ? ++q : --q) {
+            acolyte = obj.acolyteObjects[i];
+            ref7 = obj.roomObjects;
+            for (r = 0, len2 = ref7.length; r < len2; r++) {
+              room = ref7[r];
+              if (room.acolytes.length > 0) {
+                for (j = s = 0, ref8 = room.acolytes.length - 1; 0 <= ref8 ? s <= ref8 : s >= ref8; j = 0 <= ref8 ? ++s : --s) {
+                  if (room.acolytes[j].uuid === acolyte.uuid) {
+                    room.acolytes[j] = acolyte;
+                  }
+                }
+              }
+            }
+          }
         }
         newMap = new Map();
         newMap.sizeX = obj.map.sizeX;
@@ -2554,8 +2734,8 @@
         obj.map = newMap;
         obj.firstTick = true;
         obj.lastTickTime = moment().valueOf();
-        window.simulator.data = obj;
-        window.simulator.formRoomConnections();
+        document.simulator.data = obj;
+        document.simulator.formRoomConnections();
         return $rootScope.save();
       }
     };
@@ -2593,7 +2773,8 @@
         this.health += 1;
         if (this.health === this.maxHealth) {
           this.hp = this.maxHp;
-          window.simulator.narrate('One of your monsters has recovered.');
+          document.simulator.narrate('One of your monsters has recovered.');
+          document.simulator.updateRoomCanvas();
         }
       }
       if (this.hp < this.maxHp) {
@@ -2627,7 +2808,7 @@
 
     Monster.prototype.levelUp = function() {
       this.level += 1;
-      window.simulator.narrate('One of your monsters has attained level ' + this.level.toString() + '!');
+      document.simulator.narrate('One of your monsters has attained level ' + this.level.toString() + '!');
       this.hp += 7;
       this.maxHp += 7;
       return this.damage += 1;
@@ -2656,7 +2837,7 @@
         this.health += 1;
         if (this.health === this.maxHealth) {
           this.hp = this.maxHp;
-          window.simulator.narrate('One of your monsters has recovered.');
+          document.simulator.narrate('One of your monsters has recovered.');
         }
       }
       if (this.hp < this.maxHp) {
@@ -2669,7 +2850,7 @@
 
     SmallMonster.prototype.levelUp = function() {
       this.level += 1;
-      window.simulator.narrate('One of your small monsters has attained level ' + this.level.toString() + '!');
+      document.simulator.narrate('One of your small monsters has attained level ' + this.level.toString() + '!');
       this.hp += 2;
       this.maxHp += 2;
       return this.damage += 1;
@@ -2698,7 +2879,7 @@
         this.health += 1;
         if (this.health === this.maxHealth) {
           this.hp = this.maxHp;
-          window.simulator.narrate('One of your monsters has recovered.');
+          document.simulator.narrate('One of your monsters has recovered.');
         }
       }
       if (this.hp < this.maxHp) {
@@ -2711,7 +2892,7 @@
 
     BigMonster.prototype.levelUp = function() {
       this.level += 1;
-      window.simulator.narrate('One of your big monsters has attained level ' + this.level.toString() + '!');
+      document.simulator.narrate('One of your big monsters has attained level ' + this.level.toString() + '!');
       this.hp += 7;
       this.maxHp += 7;
       return this.damage += 1;
@@ -2740,7 +2921,7 @@
         this.health += 1;
         if (this.health === this.maxHealth) {
           this.hp = this.maxHp;
-          window.simulator.narrate('One of your monsters has recovered.');
+          document.simulator.narrate('One of your monsters has recovered.');
         }
       }
       if (this.hp < this.maxHp) {
@@ -2753,7 +2934,7 @@
 
     HugeMonster.prototype.levelUp = function() {
       this.level += 1;
-      window.simulator.narrate('One of your huge monsters has attained level ' + this.level.toString() + '!');
+      document.simulator.narrate('One of your huge monsters has attained level ' + this.level.toString() + '!');
       this.hp += 28;
       this.maxHp += 28;
       return this.damage += 1;
@@ -2769,6 +2950,7 @@
       this.health = 2400;
       this.labor = 16;
       this.type = unitTypes.minion;
+      this.uuid = guid();
     }
 
     return Minion;
@@ -2820,6 +3002,7 @@
       this.health = 2400;
       this.reputation = 16;
       this.type = unitTypes.acolyte;
+      this.uuid = guid();
     }
 
     return Acolyte;
@@ -2874,17 +3057,9 @@
     }
 
     Adventurer.prototype.getMultiplier = function(level) {
-      if (level === 1) {
-        return 1;
-      } else if (level === 2) {
-        return 2;
-      } else if (level === 3) {
-        return 4;
-      } else if (level === 4) {
-        return 12;
-      } else {
-        return 12;
-      }
+      var table;
+      table = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 18, 22, 27, 33, 40, 48, 58, 70, 84, 101, 122, 147, 177, 213, 256, 307, 369, 443, 532, 639, 767, 921, 1106, 1328, 1594, 1913, 2296, 2756, 3276, 3276];
+      return table[level - 1];
     };
 
     return Adventurer;
@@ -3103,6 +3278,6 @@
     }
   };
 
-  nextTierReputation = [4500, 22000, 215000, 1000000000000000000000000000000000000000000];
+  nextTierReputation = [4500, 7300, 14700, 71600, 121207, 143400, 242414, 363621, 484828, 606035, 727242, 848450, 969657, 1090864, 1212071, 1333279, 1454486, 1575693, 1696900, 1818107, 1939314, 2060521, 2181729, 2302936, 2424143, 20854802, 41709604, 62564406, 83419208, 104274010, 125128813, 145983615, 166838417, 187693219, 208548021, 229402824, 250257626, 271112428, 1000000000000000000000000000000000000000000];
 
 }).call(this);
