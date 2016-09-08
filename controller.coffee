@@ -90,10 +90,13 @@ app.service 'dungeon', class Dungeon
         @data.devMultiplier = 1
         @data.minionMultiplier = 1
         @data.acolyteMultiplier = 1
+        @data.monsterXPMultiplier = 1
         @data.minionUpgradeCost = Math.floor(15000*0.2)
         @data.minionUpgradeNumber = 1
         @data.acolyteUpgradeCost = Math.floor(15000*0.2)
         @data.acolyteUpgradeNumber = 1
+        @data.monsterUpgradeCost = Math.floor(15000*0.2)
+        @data.monsterUpgradeNumber = 1
         @data.cost = 4000
         
         @data.lastTickTime = moment().valueOf()
@@ -207,6 +210,11 @@ app.service 'dungeon', class Dungeon
         if @data.reputation >= @data.acolyteUpgradeCost
             return '100'
         return (@data.reputation/@data.acolyteUpgradeCost*100).toString()
+    monsterUpgradeProgressPercent: =>
+        if @data.reputation >= @data.monsterUpgradeCost
+            return '100'
+        return (@data.reputation/@data.monsterUpgradeCost*100).toString()
+
     tierProgressPercent: =>
         if @data.currentTierReputation >= nextTierReputation[@data.dungeonLevel-1]
             return '100'
@@ -226,10 +234,9 @@ app.service 'dungeon', class Dungeon
         return "Upgrade Minions #{@data.minionUpgradeNumber} (#{humanize(@data.minionUpgradeCost)} reputation)"
     upgradeAcolytesText: =>
         return "Upgrade Acolytes #{@data.acolyteUpgradeNumber} (#{humanize(@data.acolyteUpgradeCost)} reputation)"
-    roomETA: =>
-        remaining = @roomCost() - @data.roomProgress
-        rate = ((@data.smallMinions)+(@data.minions*16)+(@data.bigMinions*256)+(@data.hugeMinions*4096)) * @data.devMultiplier * @data.minionMultiplier
-        eta = Math.floor(remaining/rate)
+    upgradeMonstersText: =>
+        return "Upgrade Monsters #{@data.monsterUpgradeNumber} (#{humanize(@data.monsterUpgradeCost)} reputation)"
+    humanizeETA: (eta) =>
         duration = moment.duration(eta*100) # Setting in milliseconds
         moment_time = duration.humanize()
         specific = ""
@@ -239,7 +246,14 @@ app.service 'dungeon', class Dungeon
         specific += "#{duration.hours()}h" if duration.hours() > 0
         specific += "#{duration.minutes()}m" if duration.minutes() > 0
         specific += "#{duration.seconds()}s" if duration.seconds() > 0
+        if specific == "" and eta!=0
+            specific +="0s"
         return specific
+    roomETA: =>
+        remaining = @roomCost() - @data.roomProgress
+        rate = ((@data.smallMinions)+(@data.minions*16)+(@data.bigMinions*256)+(@data.hugeMinions*4096)) * @data.devMultiplier * @data.minionMultiplier
+        eta = Math.floor(remaining/rate)
+        return @humanizeETA (eta)
     unitETA: =>
         if @data.reputation > @data.cost
             remaining = 0
@@ -247,16 +261,7 @@ app.service 'dungeon', class Dungeon
             remaining = @data.cost - @data.reputation
         rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
         eta = Math.floor(remaining/rate)
-        duration = moment.duration(eta*100) # Setting in milliseconds
-        moment_time = duration.humanize()
-        specific = ""
-        specific += "#{duration.years()}y" if duration.years() > 0
-        specific += "#{duration.months()}M" if duration.months() > 0
-        specific += "#{duration.days()}d" if duration.days() > 0
-        specific += "#{duration.hours()}h" if duration.hours() > 0
-        specific += "#{duration.minutes()}m" if duration.minutes() > 0
-        specific += "#{duration.seconds()}s" if duration.seconds() > 0
-        return specific
+        return @humanizeETA (eta)
     smallUnitETA: =>
         if @data.reputation > Math.floor(@data.cost*0.09375)
             remaining = 0
@@ -264,16 +269,7 @@ app.service 'dungeon', class Dungeon
             remaining = Math.floor(@data.cost*0.09375) - @data.reputation
         rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
         eta = Math.floor(remaining/rate)
-        duration = moment.duration(eta*100) # Setting in milliseconds
-        moment_time = duration.humanize()
-        specific = ""
-        specific += "#{duration.years()}y" if duration.years() > 0
-        specific += "#{duration.months()}M" if duration.months() > 0
-        specific += "#{duration.days()}d" if duration.days() > 0
-        specific += "#{duration.hours()}h" if duration.hours() > 0
-        specific += "#{duration.minutes()}m" if duration.minutes() > 0
-        specific += "#{duration.seconds()}s" if duration.seconds() > 0
-        return specific
+        return @humanizeETA (eta)
     bigUnitETA: =>
         if @data.reputation > Math.floor(@data.cost*119.42)
             remaining = 0
@@ -281,16 +277,7 @@ app.service 'dungeon', class Dungeon
             remaining = Math.floor(@data.cost*119.42) - @data.reputation
         rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
         eta = Math.floor(remaining/rate)
-        duration = moment.duration(eta*100) # Setting in milliseconds
-        moment_time = duration.humanize()
-        specific = ""
-        specific += "#{duration.years()}y" if duration.years() > 0
-        specific += "#{duration.months()}M" if duration.months() > 0
-        specific += "#{duration.days()}d" if duration.days() > 0
-        specific += "#{duration.hours()}h" if duration.hours() > 0
-        specific += "#{duration.minutes()}m" if duration.minutes() > 0
-        specific += "#{duration.seconds()}s" if duration.seconds() > 0
-        return specific
+        return @humanizeETA (eta)
     hugeUnitETA: =>
         if @data.reputation > Math.floor(@data.cost*17752.88)
             remaining = 0
@@ -298,16 +285,7 @@ app.service 'dungeon', class Dungeon
             remaining = Math.floor(@data.cost*17752.88) - @data.reputation
         rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
         eta = Math.floor(remaining/rate)
-        duration = moment.duration(eta*100) # Setting in milliseconds
-        moment_time = duration.humanize()
-        specific = ""
-        specific += "#{duration.years()}y" if duration.years() > 0
-        specific += "#{duration.months()}M" if duration.months() > 0
-        specific += "#{duration.days()}d" if duration.days() > 0
-        specific += "#{duration.hours()}h" if duration.hours() > 0
-        specific += "#{duration.minutes()}m" if duration.minutes() > 0
-        specific += "#{duration.seconds()}s" if duration.seconds() > 0
-        return specific
+        return @humanizeETA (eta)
     minionUpgradeETA: =>
         if @data.reputation > @data.minionUpgradeCost
             remaining = 0
@@ -315,16 +293,7 @@ app.service 'dungeon', class Dungeon
             remaining = @data.minionUpgradeCost - @data.reputation
         rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
         eta = Math.floor(remaining/rate)
-        duration = moment.duration(eta*100) # Setting in milliseconds
-        moment_time = duration.humanize()
-        specific = ""
-        specific += "#{duration.years()}y" if duration.years() > 0
-        specific += "#{duration.months()}M" if duration.months() > 0
-        specific += "#{duration.days()}d" if duration.days() > 0
-        specific += "#{duration.hours()}h" if duration.hours() > 0
-        specific += "#{duration.minutes()}m" if duration.minutes() > 0
-        specific += "#{duration.seconds()}s" if duration.seconds() > 0
-        return specific
+        return @humanizeETA (eta)
     acolyteUpgradeETA: =>
         if @data.reputation > @data.acolyteUpgradeCost
             remaining = 0
@@ -332,16 +301,15 @@ app.service 'dungeon', class Dungeon
             remaining = @data.acolyteUpgradeCost - @data.reputation
         rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
         eta = Math.floor(remaining/rate)
-        duration = moment.duration(eta*100) # Setting in milliseconds
-        moment_time = duration.humanize()
-        specific = ""
-        specific += "#{duration.years()}y" if duration.years() > 0
-        specific += "#{duration.months()}M" if duration.months() > 0
-        specific += "#{duration.days()}d" if duration.days() > 0
-        specific += "#{duration.hours()}h" if duration.hours() > 0
-        specific += "#{duration.minutes()}m" if duration.minutes() > 0
-        specific += "#{duration.seconds()}s" if duration.seconds() > 0
-        return specific
+        return @humanizeETA (eta)
+    monsterUpgradeETA: =>
+        if @data.reputation > @data.monsterUpgradeCost
+            remaining = 0
+        else
+            remaining = @data.monsterUpgradeCost - @data.reputation
+        rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
+        eta = Math.floor(remaining/rate)
+        return @humanizeETA (eta)
     tierETA: =>
         if @data.currentTierReputation > nextTierReputation[@data.dungeonLevel-1]
             remaining = 0
@@ -349,16 +317,7 @@ app.service 'dungeon', class Dungeon
             remaining = nextTierReputation[@data.dungeonLevel-1] - @data.currentTierReputation
         rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
         eta = Math.floor(remaining/rate)
-        duration = moment.duration(eta*100) # Setting in milliseconds
-        moment_time = duration.humanize()
-        specific = ""
-        specific += "#{duration.years()}y" if duration.years() > 0
-        specific += "#{duration.months()}M" if duration.months() > 0
-        specific += "#{duration.days()}d" if duration.days() > 0
-        specific += "#{duration.hours()}h" if duration.hours() > 0
-        specific += "#{duration.minutes()}m" if duration.minutes() > 0
-        specific += "#{duration.seconds()}s" if duration.seconds() > 0
-        return specific
+        return @humanizeETA (eta)
     recoveryETA: (number) =>
         if number>2400
             remaining = 0
@@ -366,16 +325,7 @@ app.service 'dungeon', class Dungeon
             remaining = 2400-number
         rate = 1
         eta = Math.floor(remaining/rate)
-        duration = moment.duration(eta*100) # Setting in milliseconds
-        moment_time = duration.humanize()
-        specific = ""
-        specific += "#{duration.years()}y" if duration.years() > 0
-        specific += "#{duration.months()}M" if duration.months() > 0
-        specific += "#{duration.days()}d" if duration.days() > 0
-        specific += "#{duration.hours()}h" if duration.hours() > 0
-        specific += "#{duration.minutes()}m" if duration.minutes() > 0
-        specific += "#{duration.seconds()}s" if duration.seconds() > 0
-        return specific
+        return @humanizeETA (eta)
 
     updateProgressBar: (bar, percent) ->
       bar.width("#{percent}%")
@@ -1045,6 +995,13 @@ app.service 'dungeon', class Dungeon
             @data.acolyteMultiplier = @data.acolyteMultiplier*1.2
             @data.acolyteUpgradeCost = Math.floor(@data.acolyteUpgradeCost*2*1.2)
             @updateRoomCanvas()
+    upgradeMonsters: =>
+        if @data.reputation >= @data.monsterUpgradeCost
+            @data.reputation -= @data.monsterUpgradeCost
+            @data.monsterUpgradeNumber += 1
+            @data.monsterXPMultiplier = @data.monsterXPMultiplier*1.2
+            @data.monsterUpgradeCost = Math.floor(@data.monsterUpgradeCost*2*1.2)
+            @updateRoomCanvas()
     optimizeRemoval: (type) =>
         roomSelected = null
         for room in @data.roomObjects
@@ -1092,6 +1049,7 @@ app.service 'dungeon', class Dungeon
             else
                 if room.acolytes.length>0 or room.minions.length>0
                     @narrate('An adventurer has disabled a roomful of your '+@unitName(room.occupantType)+'s')
+                    @updateRoomCanvas()
                 for acolyte in room.acolytes
                     acolyte.health = 0
                 for minion in room.minions
@@ -1165,9 +1123,10 @@ app.service 'dungeon', class Dungeon
                         monster.hp = 0
                         monster.health = 0
                         @narrate('One of your monsters has been disabled by an adventurer.')
+                        @updateRoomCanvas()
                 else if turnRoll==2
                     for monster in room.monsters
-                        adventurer.hp -= Math.max((Math.floor((Math.random() * 12) + 4 + monster.damage)),0)
+                        adventurer.hp -= Math.max(((Math.floor((Math.random() * 12) + 4) * monster.damage)),1)
                     turnRoll = 1
     anyMonstersActive: (room) =>
         for monster in room.monsters
@@ -1194,7 +1153,7 @@ app.service 'dungeon', class Dungeon
         xp = Math.floor(100/@numActiveMonsters(room))
         for monster in room.monsters
             if monster.isActive()
-                monster.xp += xp
+                monster.xp += xp * @data.monsterXPMultiplier
                 monster.checkForLevelUp()
         if room.occupantType == unitTypes.monster
             type = "monsters"
@@ -1426,6 +1385,8 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.minionUpgradeProgressPercentRounded = 0
     $scope.acolyteUpgradeProgressPercent = 0
     $scope.acolyteUpgradeProgressPercentRounded = 0
+    $scope.monsterUpgradeProgressPercent = 0
+    $scope.monsterUpgradeProgressPercentRounded = 0
     $scope.rooms = 0
     $scope.alerts = []
     $scope.roomETA = ""
@@ -1435,6 +1396,7 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.hugeUnitETA = ""
     $scope.minionUpgradeETA = ""
     $scope.acolyteUpgradeETA = ""
+    $scope.monsterUpgradeETA = ""
     $scope.monsters = 0
     $scope.smallMonsters = 0
     $scope.bigMonsters = 0
@@ -1456,6 +1418,7 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.treasure = 0
     $scope.upgradeMinionsText = ""
     $scope.upgradeAcolytesText = ""
+    $scope.upgradeMonstersText = ""
     $scope.emptyRooms = 0
     $scope.devMultiplier = 1
     $scope.skipDays = 0
@@ -1465,6 +1428,7 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.enableAlerts = true
     $scope.acolyteMultiplier = 0
     $scope.minionMultiplier = 0
+    $scope.monsterXPMultiplier = 0
     $scope.dungeonLevel = 0
     $scope.tierProgressPercent = 0
     $scope.tierProgressPercentRounded = 0
@@ -1528,6 +1492,9 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.$watch 'dungeon.acolyteUpgradeProgressPercent()', (newVal) ->
         $scope.acolyteUpgradeProgressPercent = newVal
         $scope.acolyteUpgradeProgressPercentRounded = Math.floor(newVal)
+    $scope.$watch 'dungeon.monsterUpgradeProgressPercent()', (newVal) ->
+        $scope.monsterUpgradeProgressPercent = newVal
+        $scope.monsterUpgradeProgressPercentRounded = Math.floor(newVal)
     $scope.$watch 'dungeon.data.rooms', (newVal) ->
         $scope.rooms = newVal
         if $scope.rooms > 6 and $scope.enableAlerts==true
@@ -1549,6 +1516,8 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
         $scope.minionUpgradeETA = newVal
     $scope.$watch 'dungeon.acolyteUpgradeETA()', (newVal) ->
         $scope.acolyteUpgradeETA = newVal
+    $scope.$watch 'dungeon.monsterUpgradeETA()', (newVal) ->
+        $scope.monsterUpgradeETA = newVal
     $scope.$watch 'dungeon.data.monsters', (newVal) ->
         $scope.monsters = newVal
     $scope.$watch 'dungeon.data.smallMonsters', (newVal) ->
@@ -1575,12 +1544,16 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
         $scope.upgradeMinionsText = newVal
     $scope.$watch 'dungeon.upgradeAcolytesText()', (newVal) ->
         $scope.upgradeAcolytesText = newVal
+    $scope.$watch 'dungeon.upgradeMonstersText()', (newVal) ->
+        $scope.upgradeMonstersText = newVal
     $scope.$watch 'dungeon.emptyRooms()', (newVal) ->
         $scope.emptyRooms = newVal
     $scope.$watch 'dungeon.data.minionMultiplier', (newVal) ->
         $scope.minionMultiplier = Math.floor(newVal*100)
     $scope.$watch 'dungeon.data.acolyteMultiplier', (newVal) ->
         $scope.acolyteMultiplier = Math.floor(newVal*100)
+    $scope.$watch 'dungeon.data.monsterXPMultiplier', (newVal) ->
+        $scope.monsterXPMultiplier = Math.floor(newVal*100)
     $scope.$watch 'dungeon.data.dungeonLevel', (newVal) ->
         $scope.dungeonLevel = newVal
     $scope.$watch 'dungeon.tierProgressPercent()', (newVal) ->
@@ -1704,48 +1677,12 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
             document.simulator.formRoomConnections()
             $rootScope.save()
     $rootScope.load()
-# app.directive 'tab', ->
-    # {
-        # restrict: 'E'
-        # transclude: true
-        # template: '<div role="tabpanel" class="tabContents" ng-show="active" ng-transclude></div>'
-        # require: '^tabset'
-        # scope: { heading: '@' }
-        # link: (scope, elem, attr, tabsetCtrl) ->
-            # scope.active = false
-            # console.log(tabsetCtrl)
-            # tabsetCtrl.addTab(scope)
-    # }
-# app.directive 'tabset', ->
-    # {
-        # restrict: 'E'
-        # transclude: true
-        # scope: {}
-        # templateUrl: 'tabset.html'
-        # bindToController: true
-        # controllerAs: 'tabset'
-        # controller: ->
-            # @tabs = []
-            # @addTab = (tab) ->
-                # @tabs.push tab
-                # if @tabs.length == 1
-                    # tab.active = true
-                # return
-            # @select = (selectedTab) ->
-                # for tab in @tabs
-                    # if tab.active  and tab != selectedTab
-                        # tab.active = false
-                # selectedTab.active = true
-                # return
-            # return
-    # }
-
 class Monster
     constructor: ->
         @maxHealth = 2400
         @health = 2400
-        @hp = 15
-        @maxHp = 15
+        @hp = 64
+        @maxHp = 64
         @xp = 0
         @level = 1
         @damage = 0
@@ -1789,7 +1726,7 @@ class SmallMonster extends Monster
         super()
         @hp = 4
         @maxHp = 4
-        @damage = -7
+        @damage = 1/16
         @type = unitTypes.smallMonster
     tick: =>
         if @health<@maxHealth
@@ -1810,9 +1747,9 @@ class SmallMonster extends Monster
 class BigMonster extends Monster
     constructor: ->
         super()
-        @hp = 60
-        @maxHp = 60
-        @damage = 30
+        @hp = 1024
+        @maxHp = 1024
+        @damage = 16
         @type = unitTypes.bigMonster
     tick: =>
         if @health<@maxHealth
@@ -1833,9 +1770,9 @@ class BigMonster extends Monster
 class HugeMonster extends Monster
     constructor: ->
         super()
-        @hp = 240
-        @maxHp = 240
-        @damage = 90
+        @hp = 16384
+        @maxHp = 16384
+        @damage = 256
         @type = unitTypes.hugeMonster
     tick: =>
         if @health<@maxHealth

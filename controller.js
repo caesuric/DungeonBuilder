@@ -52,6 +52,7 @@
       this.unitName = bind(this.unitName, this);
       this.runDungeon = bind(this.runDungeon, this);
       this.optimizeRemoval = bind(this.optimizeRemoval, this);
+      this.upgradeMonsters = bind(this.upgradeMonsters, this);
       this.upgradeAcolytes = bind(this.upgradeAcolytes, this);
       this.upgradeMinions = bind(this.upgradeMinions, this);
       this.sellHugeAcolyte = bind(this.sellHugeAcolyte, this);
@@ -123,6 +124,7 @@
       this.unitCode = bind(this.unitCode, this);
       this.recoveryETA = bind(this.recoveryETA, this);
       this.tierETA = bind(this.tierETA, this);
+      this.monsterUpgradeETA = bind(this.monsterUpgradeETA, this);
       this.acolyteUpgradeETA = bind(this.acolyteUpgradeETA, this);
       this.minionUpgradeETA = bind(this.minionUpgradeETA, this);
       this.hugeUnitETA = bind(this.hugeUnitETA, this);
@@ -130,10 +132,13 @@
       this.smallUnitETA = bind(this.smallUnitETA, this);
       this.unitETA = bind(this.unitETA, this);
       this.roomETA = bind(this.roomETA, this);
+      this.humanizeETA = bind(this.humanizeETA, this);
+      this.upgradeMonstersText = bind(this.upgradeMonstersText, this);
       this.upgradeAcolytesText = bind(this.upgradeAcolytesText, this);
       this.upgradeMinionsText = bind(this.upgradeMinionsText, this);
       this.updateRoomBox = bind(this.updateRoomBox, this);
       this.tierProgressPercent = bind(this.tierProgressPercent, this);
+      this.monsterUpgradeProgressPercent = bind(this.monsterUpgradeProgressPercent, this);
       this.acolyteUpgradeProgressPercent = bind(this.acolyteUpgradeProgressPercent, this);
       this.minionUpgradeProgressPercent = bind(this.minionUpgradeProgressPercent, this);
       this.hugeUnitProgressPercent = bind(this.hugeUnitProgressPercent, this);
@@ -230,10 +235,13 @@
       this.data.devMultiplier = 1;
       this.data.minionMultiplier = 1;
       this.data.acolyteMultiplier = 1;
+      this.data.monsterXPMultiplier = 1;
       this.data.minionUpgradeCost = Math.floor(15000 * 0.2);
       this.data.minionUpgradeNumber = 1;
       this.data.acolyteUpgradeCost = Math.floor(15000 * 0.2);
       this.data.acolyteUpgradeNumber = 1;
+      this.data.monsterUpgradeCost = Math.floor(15000 * 0.2);
+      this.data.monsterUpgradeNumber = 1;
       this.data.cost = 4000;
       this.data.lastTickTime = moment().valueOf();
       this.data.firstTick = true;
@@ -419,6 +427,13 @@
       return (this.data.reputation / this.data.acolyteUpgradeCost * 100).toString();
     };
 
+    Dungeon.prototype.monsterUpgradeProgressPercent = function() {
+      if (this.data.reputation >= this.data.monsterUpgradeCost) {
+        return '100';
+      }
+      return (this.data.reputation / this.data.monsterUpgradeCost * 100).toString();
+    };
+
     Dungeon.prototype.tierProgressPercent = function() {
       if (this.data.currentTierReputation >= nextTierReputation[this.data.dungeonLevel - 1]) {
         return '100';
@@ -450,11 +465,12 @@
       return "Upgrade Acolytes " + this.data.acolyteUpgradeNumber + " (" + (humanize(this.data.acolyteUpgradeCost)) + " reputation)";
     };
 
-    Dungeon.prototype.roomETA = function() {
-      var duration, eta, moment_time, rate, remaining, specific;
-      remaining = this.roomCost() - this.data.roomProgress;
-      rate = (this.data.smallMinions + (this.data.minions * 16) + (this.data.bigMinions * 256) + (this.data.hugeMinions * 4096)) * this.data.devMultiplier * this.data.minionMultiplier;
-      eta = Math.floor(remaining / rate);
+    Dungeon.prototype.upgradeMonstersText = function() {
+      return "Upgrade Monsters " + this.data.monsterUpgradeNumber + " (" + (humanize(this.data.monsterUpgradeCost)) + " reputation)";
+    };
+
+    Dungeon.prototype.humanizeETA = function(eta) {
+      var duration, moment_time, specific;
       duration = moment.duration(eta * 100);
       moment_time = duration.humanize();
       specific = "";
@@ -476,11 +492,22 @@
       if (duration.seconds() > 0) {
         specific += (duration.seconds()) + "s";
       }
+      if (specific === "" && eta !== 0) {
+        specific += "0s";
+      }
       return specific;
     };
 
+    Dungeon.prototype.roomETA = function() {
+      var eta, rate, remaining;
+      remaining = this.roomCost() - this.data.roomProgress;
+      rate = (this.data.smallMinions + (this.data.minions * 16) + (this.data.bigMinions * 256) + (this.data.hugeMinions * 4096)) * this.data.devMultiplier * this.data.minionMultiplier;
+      eta = Math.floor(remaining / rate);
+      return this.humanizeETA(eta);
+    };
+
     Dungeon.prototype.unitETA = function() {
-      var duration, eta, moment_time, rate, remaining, specific;
+      var eta, rate, remaining;
       if (this.data.reputation > this.data.cost) {
         remaining = 0;
       } else {
@@ -488,32 +515,11 @@
       }
       rate = (this.data.smallAcolytes + (this.data.acolytes * 16) + (this.data.bigAcolytes * 256) + (this.data.hugeAcolytes * 4096)) * this.data.devMultiplier * this.data.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
-      duration = moment.duration(eta * 100);
-      moment_time = duration.humanize();
-      specific = "";
-      if (duration.years() > 0) {
-        specific += (duration.years()) + "y";
-      }
-      if (duration.months() > 0) {
-        specific += (duration.months()) + "M";
-      }
-      if (duration.days() > 0) {
-        specific += (duration.days()) + "d";
-      }
-      if (duration.hours() > 0) {
-        specific += (duration.hours()) + "h";
-      }
-      if (duration.minutes() > 0) {
-        specific += (duration.minutes()) + "m";
-      }
-      if (duration.seconds() > 0) {
-        specific += (duration.seconds()) + "s";
-      }
-      return specific;
+      return this.humanizeETA(eta);
     };
 
     Dungeon.prototype.smallUnitETA = function() {
-      var duration, eta, moment_time, rate, remaining, specific;
+      var eta, rate, remaining;
       if (this.data.reputation > Math.floor(this.data.cost * 0.09375)) {
         remaining = 0;
       } else {
@@ -521,32 +527,11 @@
       }
       rate = (this.data.smallAcolytes + (this.data.acolytes * 16) + (this.data.bigAcolytes * 256) + (this.data.hugeAcolytes * 4096)) * this.data.devMultiplier * this.data.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
-      duration = moment.duration(eta * 100);
-      moment_time = duration.humanize();
-      specific = "";
-      if (duration.years() > 0) {
-        specific += (duration.years()) + "y";
-      }
-      if (duration.months() > 0) {
-        specific += (duration.months()) + "M";
-      }
-      if (duration.days() > 0) {
-        specific += (duration.days()) + "d";
-      }
-      if (duration.hours() > 0) {
-        specific += (duration.hours()) + "h";
-      }
-      if (duration.minutes() > 0) {
-        specific += (duration.minutes()) + "m";
-      }
-      if (duration.seconds() > 0) {
-        specific += (duration.seconds()) + "s";
-      }
-      return specific;
+      return this.humanizeETA(eta);
     };
 
     Dungeon.prototype.bigUnitETA = function() {
-      var duration, eta, moment_time, rate, remaining, specific;
+      var eta, rate, remaining;
       if (this.data.reputation > Math.floor(this.data.cost * 119.42)) {
         remaining = 0;
       } else {
@@ -554,32 +539,11 @@
       }
       rate = (this.data.smallAcolytes + (this.data.acolytes * 16) + (this.data.bigAcolytes * 256) + (this.data.hugeAcolytes * 4096)) * this.data.devMultiplier * this.data.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
-      duration = moment.duration(eta * 100);
-      moment_time = duration.humanize();
-      specific = "";
-      if (duration.years() > 0) {
-        specific += (duration.years()) + "y";
-      }
-      if (duration.months() > 0) {
-        specific += (duration.months()) + "M";
-      }
-      if (duration.days() > 0) {
-        specific += (duration.days()) + "d";
-      }
-      if (duration.hours() > 0) {
-        specific += (duration.hours()) + "h";
-      }
-      if (duration.minutes() > 0) {
-        specific += (duration.minutes()) + "m";
-      }
-      if (duration.seconds() > 0) {
-        specific += (duration.seconds()) + "s";
-      }
-      return specific;
+      return this.humanizeETA(eta);
     };
 
     Dungeon.prototype.hugeUnitETA = function() {
-      var duration, eta, moment_time, rate, remaining, specific;
+      var eta, rate, remaining;
       if (this.data.reputation > Math.floor(this.data.cost * 17752.88)) {
         remaining = 0;
       } else {
@@ -587,32 +551,11 @@
       }
       rate = (this.data.smallAcolytes + (this.data.acolytes * 16) + (this.data.bigAcolytes * 256) + (this.data.hugeAcolytes * 4096)) * this.data.devMultiplier * this.data.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
-      duration = moment.duration(eta * 100);
-      moment_time = duration.humanize();
-      specific = "";
-      if (duration.years() > 0) {
-        specific += (duration.years()) + "y";
-      }
-      if (duration.months() > 0) {
-        specific += (duration.months()) + "M";
-      }
-      if (duration.days() > 0) {
-        specific += (duration.days()) + "d";
-      }
-      if (duration.hours() > 0) {
-        specific += (duration.hours()) + "h";
-      }
-      if (duration.minutes() > 0) {
-        specific += (duration.minutes()) + "m";
-      }
-      if (duration.seconds() > 0) {
-        specific += (duration.seconds()) + "s";
-      }
-      return specific;
+      return this.humanizeETA(eta);
     };
 
     Dungeon.prototype.minionUpgradeETA = function() {
-      var duration, eta, moment_time, rate, remaining, specific;
+      var eta, rate, remaining;
       if (this.data.reputation > this.data.minionUpgradeCost) {
         remaining = 0;
       } else {
@@ -620,32 +563,11 @@
       }
       rate = (this.data.smallAcolytes + (this.data.acolytes * 16) + (this.data.bigAcolytes * 256) + (this.data.hugeAcolytes * 4096)) * this.data.devMultiplier * this.data.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
-      duration = moment.duration(eta * 100);
-      moment_time = duration.humanize();
-      specific = "";
-      if (duration.years() > 0) {
-        specific += (duration.years()) + "y";
-      }
-      if (duration.months() > 0) {
-        specific += (duration.months()) + "M";
-      }
-      if (duration.days() > 0) {
-        specific += (duration.days()) + "d";
-      }
-      if (duration.hours() > 0) {
-        specific += (duration.hours()) + "h";
-      }
-      if (duration.minutes() > 0) {
-        specific += (duration.minutes()) + "m";
-      }
-      if (duration.seconds() > 0) {
-        specific += (duration.seconds()) + "s";
-      }
-      return specific;
+      return this.humanizeETA(eta);
     };
 
     Dungeon.prototype.acolyteUpgradeETA = function() {
-      var duration, eta, moment_time, rate, remaining, specific;
+      var eta, rate, remaining;
       if (this.data.reputation > this.data.acolyteUpgradeCost) {
         remaining = 0;
       } else {
@@ -653,32 +575,23 @@
       }
       rate = (this.data.smallAcolytes + (this.data.acolytes * 16) + (this.data.bigAcolytes * 256) + (this.data.hugeAcolytes * 4096)) * this.data.devMultiplier * this.data.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
-      duration = moment.duration(eta * 100);
-      moment_time = duration.humanize();
-      specific = "";
-      if (duration.years() > 0) {
-        specific += (duration.years()) + "y";
+      return this.humanizeETA(eta);
+    };
+
+    Dungeon.prototype.monsterUpgradeETA = function() {
+      var eta, rate, remaining;
+      if (this.data.reputation > this.data.monsterUpgradeCost) {
+        remaining = 0;
+      } else {
+        remaining = this.data.monsterUpgradeCost - this.data.reputation;
       }
-      if (duration.months() > 0) {
-        specific += (duration.months()) + "M";
-      }
-      if (duration.days() > 0) {
-        specific += (duration.days()) + "d";
-      }
-      if (duration.hours() > 0) {
-        specific += (duration.hours()) + "h";
-      }
-      if (duration.minutes() > 0) {
-        specific += (duration.minutes()) + "m";
-      }
-      if (duration.seconds() > 0) {
-        specific += (duration.seconds()) + "s";
-      }
-      return specific;
+      rate = (this.data.smallAcolytes + (this.data.acolytes * 16) + (this.data.bigAcolytes * 256) + (this.data.hugeAcolytes * 4096)) * this.data.devMultiplier * this.data.acolyteMultiplier;
+      eta = Math.floor(remaining / rate);
+      return this.humanizeETA(eta);
     };
 
     Dungeon.prototype.tierETA = function() {
-      var duration, eta, moment_time, rate, remaining, specific;
+      var eta, rate, remaining;
       if (this.data.currentTierReputation > nextTierReputation[this.data.dungeonLevel - 1]) {
         remaining = 0;
       } else {
@@ -686,32 +599,11 @@
       }
       rate = (this.data.smallAcolytes + (this.data.acolytes * 16) + (this.data.bigAcolytes * 256) + (this.data.hugeAcolytes * 4096)) * this.data.devMultiplier * this.data.acolyteMultiplier;
       eta = Math.floor(remaining / rate);
-      duration = moment.duration(eta * 100);
-      moment_time = duration.humanize();
-      specific = "";
-      if (duration.years() > 0) {
-        specific += (duration.years()) + "y";
-      }
-      if (duration.months() > 0) {
-        specific += (duration.months()) + "M";
-      }
-      if (duration.days() > 0) {
-        specific += (duration.days()) + "d";
-      }
-      if (duration.hours() > 0) {
-        specific += (duration.hours()) + "h";
-      }
-      if (duration.minutes() > 0) {
-        specific += (duration.minutes()) + "m";
-      }
-      if (duration.seconds() > 0) {
-        specific += (duration.seconds()) + "s";
-      }
-      return specific;
+      return this.humanizeETA(eta);
     };
 
     Dungeon.prototype.recoveryETA = function(number) {
-      var duration, eta, moment_time, rate, remaining, specific;
+      var eta, rate, remaining;
       if (number > 2400) {
         remaining = 0;
       } else {
@@ -719,28 +611,7 @@
       }
       rate = 1;
       eta = Math.floor(remaining / rate);
-      duration = moment.duration(eta * 100);
-      moment_time = duration.humanize();
-      specific = "";
-      if (duration.years() > 0) {
-        specific += (duration.years()) + "y";
-      }
-      if (duration.months() > 0) {
-        specific += (duration.months()) + "M";
-      }
-      if (duration.days() > 0) {
-        specific += (duration.days()) + "d";
-      }
-      if (duration.hours() > 0) {
-        specific += (duration.hours()) + "h";
-      }
-      if (duration.minutes() > 0) {
-        specific += (duration.minutes()) + "m";
-      }
-      if (duration.seconds() > 0) {
-        specific += (duration.seconds()) + "s";
-      }
-      return specific;
+      return this.humanizeETA(eta);
     };
 
     Dungeon.prototype.updateProgressBar = function(bar, percent) {
@@ -1774,6 +1645,16 @@
       }
     };
 
+    Dungeon.prototype.upgradeMonsters = function() {
+      if (this.data.reputation >= this.data.monsterUpgradeCost) {
+        this.data.reputation -= this.data.monsterUpgradeCost;
+        this.data.monsterUpgradeNumber += 1;
+        this.data.monsterXPMultiplier = this.data.monsterXPMultiplier * 1.2;
+        this.data.monsterUpgradeCost = Math.floor(this.data.monsterUpgradeCost * 2 * 1.2);
+        return this.updateRoomCanvas();
+      }
+    };
+
     Dungeon.prototype.optimizeRemoval = function(type) {
       var acolyte, i, k, l, len, m, minion, monster, n, ref, ref1, ref2, ref3, room, roomSelected;
       roomSelected = null;
@@ -1839,6 +1720,7 @@
         } else {
           if (room.acolytes.length > 0 || room.minions.length > 0) {
             this.narrate('An adventurer has disabled a roomful of your ' + this.unitName(room.occupantType) + 's');
+            this.updateRoomCanvas();
           }
           ref = room.acolytes;
           for (k = 0, len = ref.length; k < len; k++) {
@@ -1941,7 +1823,8 @@
             if (monster.hp <= 0) {
               monster.hp = 0;
               monster.health = 0;
-              results1.push(this.narrate('One of your monsters has been disabled by an adventurer.'));
+              this.narrate('One of your monsters has been disabled by an adventurer.');
+              results1.push(this.updateRoomCanvas());
             } else {
               results1.push(void 0);
             }
@@ -1949,7 +1832,7 @@
             ref = room.monsters;
             for (k = 0, len = ref.length; k < len; k++) {
               monster = ref[k];
-              adventurer.hp -= Math.max(Math.floor((Math.random() * 12) + 4 + monster.damage), 0);
+              adventurer.hp -= Math.max(Math.floor((Math.random() * 12) + 4) * monster.damage, 1);
             }
             results1.push(turnRoll = 1);
           } else {
@@ -2009,7 +1892,7 @@
       for (k = 0, len = ref.length; k < len; k++) {
         monster = ref[k];
         if (monster.isActive()) {
-          monster.xp += xp;
+          monster.xp += xp * this.data.monsterXPMultiplier;
           monster.checkForLevelUp();
         }
       }
@@ -2342,6 +2225,8 @@
     $scope.minionUpgradeProgressPercentRounded = 0;
     $scope.acolyteUpgradeProgressPercent = 0;
     $scope.acolyteUpgradeProgressPercentRounded = 0;
+    $scope.monsterUpgradeProgressPercent = 0;
+    $scope.monsterUpgradeProgressPercentRounded = 0;
     $scope.rooms = 0;
     $scope.alerts = [];
     $scope.roomETA = "";
@@ -2351,6 +2236,7 @@
     $scope.hugeUnitETA = "";
     $scope.minionUpgradeETA = "";
     $scope.acolyteUpgradeETA = "";
+    $scope.monsterUpgradeETA = "";
     $scope.monsters = 0;
     $scope.smallMonsters = 0;
     $scope.bigMonsters = 0;
@@ -2372,6 +2258,7 @@
     $scope.treasure = 0;
     $scope.upgradeMinionsText = "";
     $scope.upgradeAcolytesText = "";
+    $scope.upgradeMonstersText = "";
     $scope.emptyRooms = 0;
     $scope.devMultiplier = 1;
     $scope.skipDays = 0;
@@ -2381,6 +2268,7 @@
     $scope.enableAlerts = true;
     $scope.acolyteMultiplier = 0;
     $scope.minionMultiplier = 0;
+    $scope.monsterXPMultiplier = 0;
     $scope.dungeonLevel = 0;
     $scope.tierProgressPercent = 0;
     $scope.tierProgressPercentRounded = 0;
@@ -2459,6 +2347,10 @@
       $scope.acolyteUpgradeProgressPercent = newVal;
       return $scope.acolyteUpgradeProgressPercentRounded = Math.floor(newVal);
     });
+    $scope.$watch('dungeon.monsterUpgradeProgressPercent()', function(newVal) {
+      $scope.monsterUpgradeProgressPercent = newVal;
+      return $scope.monsterUpgradeProgressPercentRounded = Math.floor(newVal);
+    });
     $scope.$watch('dungeon.data.rooms', function(newVal) {
       $scope.rooms = newVal;
       if ($scope.rooms > 6 && $scope.enableAlerts === true) {
@@ -2499,6 +2391,9 @@
     $scope.$watch('dungeon.acolyteUpgradeETA()', function(newVal) {
       return $scope.acolyteUpgradeETA = newVal;
     });
+    $scope.$watch('dungeon.monsterUpgradeETA()', function(newVal) {
+      return $scope.monsterUpgradeETA = newVal;
+    });
     $scope.$watch('dungeon.data.monsters', function(newVal) {
       return $scope.monsters = newVal;
     });
@@ -2538,6 +2433,9 @@
     $scope.$watch('dungeon.upgradeAcolytesText()', function(newVal) {
       return $scope.upgradeAcolytesText = newVal;
     });
+    $scope.$watch('dungeon.upgradeMonstersText()', function(newVal) {
+      return $scope.upgradeMonstersText = newVal;
+    });
     $scope.$watch('dungeon.emptyRooms()', function(newVal) {
       return $scope.emptyRooms = newVal;
     });
@@ -2546,6 +2444,9 @@
     });
     $scope.$watch('dungeon.data.acolyteMultiplier', function(newVal) {
       return $scope.acolyteMultiplier = Math.floor(newVal * 100);
+    });
+    $scope.$watch('dungeon.data.monsterXPMultiplier', function(newVal) {
+      return $scope.monsterXPMultiplier = Math.floor(newVal * 100);
     });
     $scope.$watch('dungeon.data.dungeonLevel', function(newVal) {
       return $scope.dungeonLevel = newVal;
@@ -2750,8 +2651,8 @@
       this.isActive = bind(this.isActive, this);
       this.maxHealth = 2400;
       this.health = 2400;
-      this.hp = 15;
-      this.maxHp = 15;
+      this.hp = 64;
+      this.maxHp = 64;
       this.xp = 0;
       this.level = 1;
       this.damage = 0;
@@ -2827,7 +2728,7 @@
       SmallMonster.__super__.constructor.call(this);
       this.hp = 4;
       this.maxHp = 4;
-      this.damage = -7;
+      this.damage = 1 / 16;
       this.type = unitTypes.smallMonster;
     }
 
@@ -2867,9 +2768,9 @@
       this.levelUp = bind(this.levelUp, this);
       this.tick = bind(this.tick, this);
       BigMonster.__super__.constructor.call(this);
-      this.hp = 60;
-      this.maxHp = 60;
-      this.damage = 30;
+      this.hp = 1024;
+      this.maxHp = 1024;
+      this.damage = 16;
       this.type = unitTypes.bigMonster;
     }
 
@@ -2909,9 +2810,9 @@
       this.levelUp = bind(this.levelUp, this);
       this.tick = bind(this.tick, this);
       HugeMonster.__super__.constructor.call(this);
-      this.hp = 240;
-      this.maxHp = 240;
-      this.damage = 90;
+      this.hp = 16384;
+      this.maxHp = 16384;
+      this.damage = 256;
       this.type = unitTypes.hugeMonster;
     }
 
