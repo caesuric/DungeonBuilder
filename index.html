@@ -21,6 +21,7 @@
     </div>
     <uib-tabset>
         <uib-tab heading="Summary">
+            <div style="float: left;">
             <div class="unitBox">
               Word of your dungeon has spread far and wide. Your reputation allows you to recruit minions, monsters and acolytes to improve your dungeon.<br/>
               You currently have <span ng-bind="reputation"></span> reputation.</br>
@@ -65,6 +66,19 @@
             <div class="unitBox" id="roomProgressPanel">
                 Excavation progress:<br />
                 <uib-progressbar class="progress-bar-custom" value="roomProgressPercent">{{roomETA}} {{roomProgressPercentRounded}}%</uib-progressbar>
+            </div>
+            </div>
+            <div style="float: left;">
+            <div class="unitBox">
+                <button ng-click="dungeon.razeTown()">Raze Town</button><br />
+                <button ng-click="dungeon.diplomacy()">Diplomacy</button><br />
+                Razing towns attracts more adventurers. Diplomacy reduces how many adventurers show up.<br />
+                Current adventurer multiplier: {{adventurerMultiplier}}%<br />
+                <button ng-click="dungeon.ritual()">Ritual</button><br />
+                A ritual increases your available reputation<br />
+                <button ng-click="dungeon.disintegrate()">Disintegrate</button><br />
+                Disintegration helps your minions dig rooms<br />
+            </div>
             </div>
         </uib-tab>
         <uib-tab heading="Minions">
@@ -114,7 +128,12 @@
                 <uib-progressbar class="progress-bar-custom" value="minionUpgradeProgressPercent">{{minionUpgradeETA}} {{minionUpgradeProgressPercentRounded}}%</uib-progressbar>
                 <button id='upgradeMinions' ng-click="dungeon.upgradeMinions()" ng-bind="upgradeMinionsText">Upgrade Minions</button><br/>
                 Upgrading improves effectiveness of all minion units by 20%<br />
-                Current Effectiveness: <span ng-bind="minionMultiplier"></span>%
+                Current Effectiveness: <span ng-bind="minionMultiplier"></span>%<br /><br />
+                Progress towards next combat upgrade:<br />
+                <uib-progressbar class="progress-bar-custom" value="unitCombatUpgradeProgressPercent">{{unitCombatUpgradeETA}} {{unitCombatUpgradeProgressPercentRounded}}%</uib-progressbar>
+                <button ng-click="dungeon.upgradeUnitCombat()" ng-bind="upgradeUnitCombatText">Upgrade Minions and Acolytes in Combat</button><br/>
+                Upgrading increases effectiveness of all non-monster units in combat by 2%<br />
+                Current Effectiveness: <span ng-bind="unitCombatMultiplier"></span>%
             </div>
             </div>
             <div class="unitBox" style="float: left; height: '400';">
@@ -166,7 +185,16 @@
                 <uib-progressbar class="progress-bar-custom" value="monsterUpgradeProgressPercent">{{monsterUpgradeETA}} {{monsterUpgradeProgressPercentRounded}}%</uib-progressbar>
                 <button id='upgradeMonster' ng-click="dungeon.upgradeMonsters()" ng-bind="upgradeMonstersText">Upgrade Monsters</button><br/>
                 Upgrading makes monsters level 20% faster<br />
-                Current Leveling Speed: <span ng-bind="monsterXPMultiplier"></span>%
+                Current Leveling Speed: <span ng-bind="monsterXPMultiplier"></span>%<br/><br/>
+                Progress towards next upgrade:<br />
+                <uib-progressbar class="progress-bar-custom" value="killBonusUpgradeProgressPercent">{{killBonusUpgradeETA}} {{killBonusUpgradeProgressPercentRounded}}%</uib-progressbar>
+                <button ng-click="dungeon.upgradeKillBonus()" ng-bind="upgradeKillBonusText">Upgrade Kill Bonus</button><br/>
+                Upgrading makes killing adventurers grant you reputation!<br />
+                Current bonus per kill:<br />
+                {{humanize(killBonus)}} if killed by a small unit<br />
+                {{humanize(killBonus*16)}} if killed by a normal unit<br />
+                {{humanize(killBonus*256)}} if killed by a big unit<br />
+                {{humanize(killBonus*4096)}} if killed by a huge unit<br />
             </div>
             </div>
         </uib-tab>
@@ -213,7 +241,12 @@
                 <uib-progressbar class="progress-bar-custom" value="acolyteUpgradeProgressPercent">{{acolyteUpgradeETA}} {{acolyteUpgradeProgressPercentRounded}}%</uib-progressbar>
                 <button id='upgradeAcolytes' ng-click="dungeon.upgradeAcolytes()" ng-bind="upgradeAcolytesText">Upgrade Acolytes</button><br />
                 Upgrading improves effectiveness of all acolyte units by 20%<br />
-                Current Effectiveness: <span ng-bind="acolyteMultiplier"></span>%
+                Current Effectiveness: <span ng-bind="acolyteMultiplier"></span>%<br /><br />
+                Progress towards next combat upgrade:<br />
+                <uib-progressbar class="progress-bar-custom" value="unitCombatUpgradeProgressPercent">{{unitCombatUpgradeETA}} {{unitCombatUpgradeProgressPercentRounded}}%</uib-progressbar>
+                <button ng-click="dungeon.upgradeUnitCombat()" ng-bind="upgradeUnitCombatText">Upgrade Minions and Acolytes in Combat</button><br/>
+                Upgrading increases effectiveness of all non-monster units in combat by 2%<br />
+                Current Effectiveness: <span ng-bind="unitCombatMultiplier"></span>%
             </div>
             </div>
             <div class="unitBox" style="float: left; height: '400';">

@@ -97,8 +97,14 @@ app.service 'dungeon', class Dungeon
         @data.acolyteUpgradeNumber = 1
         @data.monsterUpgradeCost = Math.floor(15000*0.2)
         @data.monsterUpgradeNumber = 1
+        @data.unitCombatMultiplier = 1
+        @data.unitCombatUpgradeCost = Math.floor(15000*0.2)
+        @data.unitCombatUpgradeNumber = 1
+        @data.killBonus = 0
+        @data.killBonusUpgradeCost = Math.floor(15000*0.2)
+        @data.killBonusUpgradeNumber = 1
         @data.cost = 4000
-        
+        @data.adventurerMultiplier = 1
         @data.lastTickTime = moment().valueOf()
         @data.firstTick = true
         @tickCount = 0
@@ -165,8 +171,8 @@ app.service 'dungeon', class Dungeon
             @data.dungeonLevel += 1
             @narrate("Your dungeon's level has increased to "+@data.dungeonLevel.toString()+"!")
         for i in [0..Math.floor(@data.treasure*@data.devMultiplier)-1]
-            adventurerRoll = Math.floor((Math.random() * 14500) + 1)
-            if adventurerRoll == 14500 and @data.dungeonOpen
+            adventurerRoll = Math.floor((Math.random() * Math.floor(14500/@data.adventurerMultiplier)) + 1)
+            if adventurerRoll == Math.floor(14500/@data.adventurerMultiplier) and @data.dungeonOpen
                 @runDungeon()
         document.rootScope.$apply()
     updateValuesNoApply: =>
@@ -214,6 +220,14 @@ app.service 'dungeon', class Dungeon
         if @data.reputation >= @data.monsterUpgradeCost
             return '100'
         return (@data.reputation/@data.monsterUpgradeCost*100).toString()
+    unitCombatUpgradeProgressPercent: =>
+        if @data.reputation >= @data.unitCombatUpgradeCost
+            return '100'
+        return (@data.reputation/@data.unitCombatUpgradeCost*100).toString()
+    killBonusUpgradeProgressPercent: =>
+        if @data.reputation >= @data.killBonusUpgradeCost
+            return '100'
+        return (@data.reputation/@data.killBonusUpgradeCost*100).toString()
 
     tierProgressPercent: =>
         if @data.currentTierReputation >= nextTierReputation[@data.dungeonLevel-1]
@@ -236,6 +250,10 @@ app.service 'dungeon', class Dungeon
         return "Upgrade Acolytes #{@data.acolyteUpgradeNumber} (#{humanize(@data.acolyteUpgradeCost)} reputation)"
     upgradeMonstersText: =>
         return "Upgrade Monsters #{@data.monsterUpgradeNumber} (#{humanize(@data.monsterUpgradeCost)} reputation)"
+    upgradeUnitCombatText: =>
+        return "Upgrade Acolyte/Minion Combat Ability #{@data.unitCombatUpgradeNumber} (#{humanize(@data.unitCombatUpgradeCost)} reputation)"
+    upgradeKillBonusText: =>
+        return "Upgrade Kill Bonus #{@data.killBonusUpgradeNumber} (#{humanize(@data.killBonusUpgradeCost)} reputation)"
     humanizeETA: (eta) =>
         duration = moment.duration(eta*100) # Setting in milliseconds
         moment_time = duration.humanize()
@@ -307,6 +325,22 @@ app.service 'dungeon', class Dungeon
             remaining = 0
         else
             remaining = @data.monsterUpgradeCost - @data.reputation
+        rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
+        eta = Math.floor(remaining/rate)
+        return @humanizeETA (eta)
+    unitCombatUpgradeETA: =>
+        if @data.reputation > @data.unitCombatUpgradeCost
+            remaining = 0
+        else
+            remaining = @data.unitCombatUpgradeCost - @data.reputation
+        rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
+        eta = Math.floor(remaining/rate)
+        return @humanizeETA (eta)
+    killBonusUpgradeETA: =>
+        if @data.reputation > @data.killBonusUpgradeCost
+            remaining = 0
+        else
+            remaining = @data.killBonusUpgradeCost - @data.reputation
         rate = ((@data.smallAcolytes)+(@data.acolytes*16)+(@data.bigAcolytes*256)+(@data.hugeAcolytes*4096)) * @data.devMultiplier * @data.acolyteMultiplier
         eta = Math.floor(remaining/rate)
         return @humanizeETA (eta)
@@ -1002,6 +1036,28 @@ app.service 'dungeon', class Dungeon
             @data.monsterXPMultiplier = @data.monsterXPMultiplier*1.2
             @data.monsterUpgradeCost = Math.floor(@data.monsterUpgradeCost*2*1.2)
             @updateRoomCanvas()
+    upgradeUnitCombat: =>
+        if @data.reputation >= @data.unitCombatUpgradeCost
+            @data.reputation -= @data.unitCombatUpgradeCost
+            @data.unitCombatUpgradeNumber += 1
+            @data.unitCombatMultiplier = @data.unitCombatMultiplier*1.02
+            @data.unitCombatUpgradeCost = Math.floor(@data.unitCombatUpgradeCost*2*1.02)
+            for acolyte in @data.acolyteObjects
+                acolyte.hp = Math.floor(acolyte.hp*1.02)
+                acolyte.maxHp = Math.floor(acolyte.maxHp*1.02)
+                acolyte.damage = Math.floor(acolyte.damage*1.02)
+            for minion in @data.minionObjects
+                minion.hp = Math.floor(minion.hp*1.02)
+                minion.maxHp = Math.floor(minion.maxHp*1.02)
+                minion.damage = Math.floor(minion.damage*1.02)
+            @updateRoomCanvas()
+    upgradeKillBonus: =>
+        if @data.reputation >= @data.killBonusUpgradeCost
+            @data.reputation -= @data.killBonusUpgradeCost
+            @data.killBonusUpgradeNumber += 1
+            @data.killBonus += 30
+            @data.killBonusUpgradeCost = Math.floor(@data.killBonusUpgradeCost*2*1.02)
+            @updateRoomCanvas()
     optimizeRemoval: (type) =>
         roomSelected = null
         for room in @data.roomObjects
@@ -1043,24 +1099,16 @@ app.service 'dungeon', class Dungeon
         hasTreasure = false
         while !done
             room = @traverseRooms(room)
-            if room.occupantType == unitTypes.monster or room.occupantType == unitTypes.smallMonster or room.occupantType == unitTypes.bigMonster or room.occupantType == unitTypes.hugeMonster
+            if room.population>0
                 if @encounterMonsters(adventurer,room)
                     return
-            else
-                if room.acolytes.length>0 or room.minions.length>0
-                    @narrate('An adventurer has disabled a roomful of your '+@unitName(room.occupantType)+'s')
-                    @updateRoomCanvas()
-                for acolyte in room.acolytes
-                    acolyte.health = 0
-                for minion in room.minions
-                    minion.health = 0
             if room.occupantType == unitTypes.treasure
                 hasTreasure = true
             if hasTreasure and room == @data.roomObjects[0]
                 done = true
         if @data.treasure>1
             @data.treasure -= 1
-            @narrate('The adventurer has successfully beaten all of your monsters! They take one of your treasures!')
+            @narrate('The adventurer has successfully escaped with one of your treasures!')
         else
             @narrate('The adventurer finds nothing and leaves.')
     unitName: (type) =>
@@ -1093,6 +1141,36 @@ app.service 'dungeon', class Dungeon
                 return 'treasure'
             else
                 return 'nothing'
+    unitSize: (type) =>
+        switch type
+            when unitTypes.smallMinion
+                return unitSizes.small
+            when unitTypes.smallAcolyte
+                return unitSizes.small
+            when unitTypes.smallMonster
+                return unitSizes.small
+            when unitTypes.minion
+                return unitSizes.medium
+            when unitTypes.acolyte
+                return unitSizes.medium
+            when unitTypes.monster
+                return unitSizes.medium
+            when unitTypes.bigMinion
+                return unitSizes.big
+            when unitTypes.bigAcolyte
+                return unitSizes.big
+            when unitTypes.bigMonster
+                return unitSizes.big
+            when unitTypes.hugeMinion
+                return unitSizes.huge
+            when unitTypes.hugeAcolyte
+                return unitSizes.huge
+            when unitTypes.hugeMonster
+                return unitSizes.huge
+            when unitTypes.treasure
+                return unitSizes.none
+            else
+                return unitSizes.none
     traverseRooms: (room) =>
         if room == null
             return @data.roomObjects[0]
@@ -1107,39 +1185,61 @@ app.service 'dungeon', class Dungeon
     encounterMonsters: (adventurer, room) =>
         @doCombat(adventurer,room)
         if adventurer.hp<=0
-            @defeatAdventurer(room)
+            @defeatAdventurer(room,adventurer)
             return true
         else
             return false
     doCombat: (adventurer, room) =>
-        if @anyMonstersActive(room)
+        if @anyUnitsActive(room)
             turnRoll = Math.floor((Math.random() * 2) + 1)
-            while adventurer.hp>0 and @anyMonstersActive(room)
+            while adventurer.hp>0 and @anyUnitsActive(room)
                 if turnRoll==1
-                    monster = @monsterWithLowestHp(room)
-                    monster.hp -= (Math.floor((Math.random() * 8) + 3)*adventurer.damageMultiplier)
+                    monster = @unitWithLowestHp(room)
+                    if monster!=null
+                        monster.hp -= (Math.floor((Math.random() * 8) + 3)*adventurer.damageMultiplier)
                     turnRoll = 2
                     if monster.hp<=0
                         monster.hp = 0
                         monster.health = 0
-                        @narrate('One of your monsters has been disabled by an adventurer.')
+                        @narrate('One of your '+@unitName(room.occupantType)+'s has been disabled by an adventurer.')
                         @updateRoomCanvas()
                 else if turnRoll==2
                     for monster in room.monsters
-                        adventurer.hp -= Math.max(((Math.floor((Math.random() * 12) + 4) * monster.damage)),1)
+                        if monster.isActive()
+                            adventurer.hp -= Math.max(((Math.floor((Math.random() * 12) + 4) * monster.damage)),1)
+                    for acolyte in room.acolytes
+                        if acolyte.health>=acolyte.maxHealth
+                            adventurer.hp -= Math.max(((Math.floor((Math.random() * 12) + 4) * acolyte.damage)),1)
+                    for minion in room.minions
+                        if minion.health>=minion.maxHealth
+                            adventurer.hp -= Math.max(((Math.floor((Math.random() * 12) + 4) * minion.damage)),1)
                     turnRoll = 1
-    anyMonstersActive: (room) =>
+    anyUnitsActive: (room) =>
         for monster in room.monsters
             if monster.isActive()
                 return true
+        for acolyte in room.acolytes
+            if acolyte.health>=acolyte.maxHealth
+                return true
+        for minion in room.minions
+            if minion.health>=minion.maxHealth
+                return true
         return false
-    monsterWithLowestHp: (room) =>
+    unitWithLowestHp: (room) =>
         lowestHp = 1000000
         monsterSelected = null
         for monster in room.monsters
             if monster.hp<lowestHp and monster.isActive()
                 lowestHp = monster.hp
                 monsterSelected = monster
+        for acolyte in room.acolytes
+            if acolyte.hp<lowestHp and acolyte.health>=acolyte.maxHealth
+                lowestHp = acolyte.hp
+                monsterSelected = acolyte
+        for minion in room.minions
+            if minion.hp<lowestHp and minion.health>=minion.maxHealth
+                lowestHp = minion.hp
+                monsterSelected = minion
         return monsterSelected
     numActiveMonsters: (room) =>
         count = 0
@@ -1147,23 +1247,19 @@ app.service 'dungeon', class Dungeon
             if monster.isActive()
                 count += 1
         return count
-    defeatAdventurer: (room) =>
+    defeatAdventurer: (room,adventurer) =>
         @data.adventurers+=1
-        @data.treasure+=1
+        @data.treasure+=adventurer.level
+        killBonus = @data.killBonus * @unitSize(room.occupantType)
+        @data.reputation+=killBonus
         xp = Math.floor(100/@numActiveMonsters(room))
         for monster in room.monsters
             if monster.isActive()
                 monster.xp += xp * @data.monsterXPMultiplier
                 monster.checkForLevelUp()
-        if room.occupantType == unitTypes.monster
-            type = "monsters"
-        else if room.occupantType == unitTypes.smallMonster
-            type = "small monsters"
-        else if room.occupantType == unitTypes.bigMonster
-            type = "big monsters"
-        else if room.occupantType == unitTypes.hugeMonster
-            type = "huge monsters"
-        @narrate('Some of your '+type+' have slain the adventurer! You take their treasure!')
+        @narrate('Some of your '+@unitName(room.occupantType)+'s have slain the adventurer! You take their '+adventurer.level+' treasure!')
+        if killBonus>0
+            @narrate('You gain '+killBonus+' reputation!')
     narrate: (text) =>
         document.getElementById('narrationContainer').innerHTML+='<br>'+text
         document.getElementById('narrationContainer').scrollTop = document.getElementById('narrationContainer').scrollHeight
@@ -1344,6 +1440,17 @@ app.service 'dungeon', class Dungeon
             else if connection.room2==obj.room and connection.room2==obj.room
                 return true
         return false
+    razeTown: =>
+        @data.adventurerMultiplier *= 1.2
+        if @data.adventurerMultiplier>14500
+            @data.adventurerMultiplier = 14500
+    diplomacy: =>
+        @data.adventurerMultiplier /= 1.2
+    ritual: =>
+        @data.reputation += @reputationRate()/10
+    disintegrate: =>
+        rate = ((@data.smallMinions)+(@data.minions*16)+(@data.bigMinions*256)+(@data.hugeMinions*4096)) * @data.devMultiplier * @data.minionMultiplier
+        @data.roomProgress += rate
 class DungeonData
     
 app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
@@ -1387,6 +1494,10 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.acolyteUpgradeProgressPercentRounded = 0
     $scope.monsterUpgradeProgressPercent = 0
     $scope.monsterUpgradeProgressPercentRounded = 0
+    $scope.unitCombatUpgradeProgressPercent = 0
+    $scope.unitCombatUpgradeProgressPercentRounded = 0
+    $scope.killBonusUpgradeProgressPercent = 0
+    $scope.killBonusUpgradeProgressPercentRounded = 0
     $scope.rooms = 0
     $scope.alerts = []
     $scope.roomETA = ""
@@ -1397,6 +1508,8 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.minionUpgradeETA = ""
     $scope.acolyteUpgradeETA = ""
     $scope.monsterUpgradeETA = ""
+    $scope.unitCombatUpgradeETA = ""
+    $scope.killBonusUpgradeETA = ""
     $scope.monsters = 0
     $scope.smallMonsters = 0
     $scope.bigMonsters = 0
@@ -1419,6 +1532,8 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.upgradeMinionsText = ""
     $scope.upgradeAcolytesText = ""
     $scope.upgradeMonstersText = ""
+    $scope.upgradeUnitCombatText = ""
+    $scope.upgradeKillBonusText = ""
     $scope.emptyRooms = 0
     $scope.devMultiplier = 1
     $scope.skipDays = 0
@@ -1429,11 +1544,15 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.acolyteMultiplier = 0
     $scope.minionMultiplier = 0
     $scope.monsterXPMultiplier = 0
+    $scope.unitCombatMultiplier = 0
+    $scope.killBonus = 0
     $scope.dungeonLevel = 0
     $scope.tierProgressPercent = 0
     $scope.tierProgressPercentRounded = 0
     $scope.tierETA = ""
     $scope.closeDungeonText = "Close Dungeon"
+    $scope.adventurerMultiplier = 0
+    $scope.humanize = humanize
     $scope.$watch 'dungeon.data.reputation', (newVal) ->
         $scope.reputation = humanize(Math.floor(newVal))
         $scope.buyAllMinionsText = "Buy All (#{dungeon.maxNumberToBuy unitTypes.minion})"
@@ -1495,6 +1614,12 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     $scope.$watch 'dungeon.monsterUpgradeProgressPercent()', (newVal) ->
         $scope.monsterUpgradeProgressPercent = newVal
         $scope.monsterUpgradeProgressPercentRounded = Math.floor(newVal)
+    $scope.$watch 'dungeon.unitCombatUpgradeProgressPercent()', (newVal) ->
+        $scope.unitCombatUpgradeProgressPercent = newVal
+        $scope.unitCombatUpgradeProgressPercentRounded = Math.floor(newVal)
+    $scope.$watch 'dungeon.killBonusUpgradeProgressPercent()', (newVal) ->
+        $scope.killBonusUpgradeProgressPercent = newVal
+        $scope.killBonusUpgradeProgressPercentRounded = Math.floor(newVal)
     $scope.$watch 'dungeon.data.rooms', (newVal) ->
         $scope.rooms = newVal
         if $scope.rooms > 6 and $scope.enableAlerts==true
@@ -1518,6 +1643,10 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
         $scope.acolyteUpgradeETA = newVal
     $scope.$watch 'dungeon.monsterUpgradeETA()', (newVal) ->
         $scope.monsterUpgradeETA = newVal
+    $scope.$watch 'dungeon.unitCombatUpgradeETA()', (newVal) ->
+        $scope.unitCombatUpgradeETA = newVal
+    $scope.$watch 'dungeon.killBonusUpgradeETA()', (newVal) ->
+        $scope.killBonusUpgradeETA = newVal
     $scope.$watch 'dungeon.data.monsters', (newVal) ->
         $scope.monsters = newVal
     $scope.$watch 'dungeon.data.smallMonsters', (newVal) ->
@@ -1546,6 +1675,10 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
         $scope.upgradeAcolytesText = newVal
     $scope.$watch 'dungeon.upgradeMonstersText()', (newVal) ->
         $scope.upgradeMonstersText = newVal
+    $scope.$watch 'dungeon.upgradeUnitCombatText()', (newVal) ->
+        $scope.upgradeUnitCombatText = newVal
+    $scope.$watch 'dungeon.upgradeKillBonusText()', (newVal) ->
+        $scope.upgradeKillBonusText = newVal
     $scope.$watch 'dungeon.emptyRooms()', (newVal) ->
         $scope.emptyRooms = newVal
     $scope.$watch 'dungeon.data.minionMultiplier', (newVal) ->
@@ -1554,6 +1687,10 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
         $scope.acolyteMultiplier = Math.floor(newVal*100)
     $scope.$watch 'dungeon.data.monsterXPMultiplier', (newVal) ->
         $scope.monsterXPMultiplier = Math.floor(newVal*100)
+    $scope.$watch 'dungeon.data.unitCombatMultiplier', (newVal) ->
+        $scope.unitCombatMultiplier = Math.floor(newVal*100)        
+    $scope.$watch 'dungeon.data.killBonus', (newVal) ->
+        $scope.killBonus = newVal
     $scope.$watch 'dungeon.data.dungeonLevel', (newVal) ->
         $scope.dungeonLevel = newVal
     $scope.$watch 'dungeon.tierProgressPercent()', (newVal) ->
@@ -1561,6 +1698,8 @@ app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
         $scope.tierProgressPercentRounded = Math.floor(newVal)
     $scope.$watch 'dungeon.tierETA()', (newVal) ->
         $scope.tierETA = newVal
+    $scope.$watch 'dungeon.data.adventurerMultiplier', (newVal) ->
+        $scope.adventurerMultiplier = Math.floor(newVal*100)
     $scope.closeAlert = (index) ->
         if $scope.alerts[index]!=undefined
             $scope.alerts[index].expired = "true"
@@ -1685,7 +1824,7 @@ class Monster
         @maxHp = 64
         @xp = 0
         @level = 1
-        @damage = 0
+        @damage = 1
         @uuid = guid()
         @type = unitTypes.monster
     isActive: =>
@@ -1733,7 +1872,8 @@ class SmallMonster extends Monster
             @health += 1
             if @health==@maxHealth
                 @hp = @maxHp
-                document.simulator.narrate('One of your monsters has recovered.')
+                document.simulator.narrate('One of your small monsters has recovered.')
+                document.simulator.updateRoomCanvas()
         if @hp < @maxHp
             roll = Math.floor((Math.random() * 640) + 1)
             if roll==640
@@ -1756,7 +1896,8 @@ class BigMonster extends Monster
             @health += 1
             if @health==@maxHealth
                 @hp = @maxHp
-                document.simulator.narrate('One of your monsters has recovered.')
+                document.simulator.narrate('One of your big monsters has recovered.')
+                document.simulator.updateRoomCanvas()
         if @hp < @maxHp
             roll = Math.floor((Math.random() * 40) + 1)
             if roll==40
@@ -1779,7 +1920,8 @@ class HugeMonster extends Monster
             @health += 1
             if @health==@maxHealth
                 @hp = @maxHp
-                document.simulator.narrate('One of your monsters has recovered.')
+                document.simulator.narrate('One of your huge monsters has recovered.')
+                document.simulator.updateRoomCanvas()
         if @hp < @maxHp
             roll = Math.floor((Math.random() * 10) + 1)
             if roll==10
@@ -1795,50 +1937,75 @@ class Minion
         @maxHealth = 2400
         @health = 2400
         @labor = 16
+        @hp = Math.floor(4*document.simulator.data.unitCombatMultiplier)
+        @maxHp = Math.floor(4*document.simulator.data.unitCombatMultiplier)
+        @damage = Math.floor(1/16*document.simulator.data.unitCombatMultiplier)
         @type = unitTypes.minion
         @uuid = guid()
 class SmallMinion extends Minion
     constructor: ->
         super()
         @labor = 1
+        @hp = Math.floor(1*document.simulator.data.unitCombatMultiplier)
+        @maxHp = Math.floor(1*document.simulator.data.unitCombatMultiplier)
+        @damage = Math.floor(1/256*document.simulator.data.unitCombatMultiplier)
         @type = unitTypes.smallMinion
 class BigMinion extends Minion
     constructor: ->
         super()
         @labor = 256
+        @hp = Math.floor(64*document.simulator.data.unitCombatMultiplier)
+        @maxHp = Math.floor(64*document.simulator.data.unitCombatMultiplier)
+        @damage = Math.floor(1*document.simulator.data.unitCombatMultiplier)
         @type = unitTypes.bigMinion
 class HugeMinion extends Minion
     constructor: ->
         super()
         @labor = 4096
+        @hp = Math.floor(1024*document.simulator.data.unitCombatMultiplier)
+        @maxHp = Math.floor(1024*document.simulator.data.unitCombatMultiplier)
+        @damage = Math.floor(16*document.simulator.data.unitCombatMultiplier)
         @type = unitTypes.hugeMinion
 class Acolyte
     constructor: ->
         @maxHealth = 2400
         @health = 2400
         @reputation = 16
+        @hp = Math.floor(4*document.simulator.data.unitCombatMultiplier)
+        @maxHp = Math.floor(4*document.simulator.data.unitCombatMultiplier)
+        @damage = Math.floor(1/16*document.simulator.data.unitCombatMultiplier)
         @type = unitTypes.acolyte
         @uuid = guid()
 class SmallAcolyte extends Acolyte
     constructor: ->
         super()
         @reputation = 1
+        @hp = Math.floor(1*document.simulator.data.unitCombatMultiplier)
+        @maxHp = Math.floor(1*document.simulator.data.unitCombatMultiplier)
+        @damage = Math.floor(1/256*document.simulator.data.unitCombatMultiplier)
         @type = unitTypes.smallAcolyte
 class BigAcolyte extends Acolyte
     constructor: ->
         super()
         @reputation = 256
+        @hp = Math.floor(64*document.simulator.data.unitCombatMultiplier)
+        @maxHp = Math.floor(64*document.simulator.data.unitCombatMultiplier)
+        @damage = Math.floor(1*document.simulator.data.unitCombatMultiplier)
         @type = unitTypes.bigAcolyte
 class HugeAcolyte extends Acolyte
     constructor: ->
         super()
         @reputation = 4096
+        @hp = Math.floor(1024*document.simulator.data.unitCombatMultiplier)
+        @maxHp = Math.floor(1024*document.simulator.data.unitCombatMultiplier)
+        @damage = Math.floor(16*document.simulator.data.unitCombatMultiplier)
         @type = unitTypes.hugeAcolyte
 class Adventurer
     constructor: (level) ->
         multiplier = @getMultiplier (level)
         @hp = 13*multiplier
         @damageMultiplier = multiplier
+        @level = level
     getMultiplier: (level) ->
         table = [
             1
@@ -1994,6 +2161,12 @@ unitTypes =
     hugeMonster: 10
     hugeAcolyte: 11
     treasure: 12
+unitSizes = 
+    none: -1
+    small: 1
+    medium: 16
+    big: 256
+    huge: 4096
 guid = ->
     s4 = ->
         Math.floor((1 + Math.random()) * 0x10000).toString(16).substring 1
