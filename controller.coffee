@@ -12,7 +12,7 @@ CanvasInitializer=
         document.canvas.skipTargetFind = true
         document.canvas.renderAll()
 
-app = angular.module('dungeonBuilder', ['ui.bootstrap', 'ngCookies', 'ngAnimate'])
+app = angular.module('dungeonBuilder', ['ui.bootstrap', 'ngCookies', 'ngAnimate','angular-svg-round-progressbar'])
 app.service 'dungeon', class Dungeon
     constructor: ($rootScope) ->
         document.simulator = this
@@ -595,6 +595,10 @@ app.service 'dungeon', class Dungeon
     displayPopup: (roomIndex,x,y) =>
         div = $('#roomTooltip')
         div.css({left: x+20, top: y-20, visibility: 'visible'})
+        text = @getRoomPopupText(roomIndex)
+        div.html text
+        return
+    getRoomPopupText: (roomIndex) =>
         room = @data.roomObjects[roomIndex]
         text = "Room "+(roomIndex+1).toString()+":"
         if roomIndex==0
@@ -606,8 +610,6 @@ app.service 'dungeon', class Dungeon
             text += 's'
         text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>"
         text +=@getDisabledText(room)
-        div.html text
-        return
     hidePopup: =>
         div = $('#roomTooltip')
         div.css({visibility: 'hidden'})
@@ -1455,6 +1457,7 @@ class DungeonData
     
 app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     document.scope = $scope
+    $scope.unitsOpen = true
     $scope.cookies = $cookies
     $scope.dungeon = dungeon
     $scope.reputation = 0

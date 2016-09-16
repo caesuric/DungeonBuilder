@@ -25,7 +25,7 @@
     }
   };
 
-  app = angular.module('dungeonBuilder', ['ui.bootstrap', 'ngCookies', 'ngAnimate']);
+  app = angular.module('dungeonBuilder', ['ui.bootstrap', 'ngCookies', 'ngAnimate', 'angular-svg-round-progressbar']);
 
   app.service('dungeon', Dungeon = (function() {
     function Dungeon($rootScope) {
@@ -127,6 +127,7 @@
       this.roomCost = bind(this.roomCost, this);
       this.getDisabledText = bind(this.getDisabledText, this);
       this.hidePopup = bind(this.hidePopup, this);
+      this.getRoomPopupText = bind(this.getRoomPopupText, this);
       this.displayPopup = bind(this.displayPopup, this);
       this.unitCode = bind(this.unitCode, this);
       this.recoveryETA = bind(this.recoveryETA, this);
@@ -967,13 +968,19 @@
     };
 
     Dungeon.prototype.displayPopup = function(roomIndex, x, y) {
-      var div, name, room, text;
+      var div, text;
       div = $('#roomTooltip');
       div.css({
         left: x + 20,
         top: y - 20,
         visibility: 'visible'
       });
+      text = this.getRoomPopupText(roomIndex);
+      div.html(text);
+    };
+
+    Dungeon.prototype.getRoomPopupText = function(roomIndex) {
+      var name, room, text;
       room = this.data.roomObjects[roomIndex];
       text = "Room " + (roomIndex + 1).toString() + ":";
       if (roomIndex === 0) {
@@ -986,8 +993,7 @@
         text += 's';
       }
       text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>";
-      text += this.getDisabledText(room);
-      div.html(text);
+      return text += this.getDisabledText(room);
     };
 
     Dungeon.prototype.hidePopup = function() {
@@ -2372,6 +2378,7 @@
 
   app.controller('main', function($scope, dungeon, $rootScope, $cookies, $window) {
     document.scope = $scope;
+    $scope.unitsOpen = true;
     $scope.cookies = $cookies;
     $scope.dungeon = dungeon;
     $scope.reputation = 0;
