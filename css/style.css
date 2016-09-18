@@ -1,3 +1,11 @@
+body {
+    -webkit-user-select: none; /* webkit (safari, chrome) browsers */
+    -moz-user-select: none; /* mozilla browsers */
+    -khtml-user-select: none; /* webkit (konqueror) browsers */
+    -ms-user-select: none; /* IE10+ */
+    cursor: default;
+}
+
 .unitBox {
   background: #444444;
   margin: 10px;
@@ -64,6 +72,29 @@ input {
     vertical-align: middle;
     line-height: 25px;
 }
+.roundProgressImage {
+    margin-left:auto;
+    margin-right:auto;
+    height: 100px;
+    width: 100px;
+    position: absolute;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 100px;
+}
+.roundProgressImage img {
+    margin-bottom: 7px;
+}
+.roundProgressCircle {
+    margin-left:auto;
+    margin-right:auto;
+    height: 100px;
+    width: 100px;
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(128, 128, 128, 0.75);
+}
+
 .roundProgressWrapper {
     margin-left:auto;
     margin-right:auto;
@@ -89,11 +120,34 @@ input {
     vertical-align: middle;
     line-height: 102px;
 }
+.unitHeaderText {
+    padding-right: 5px;
+    position: relative;
+    float: left;
+    font-size: 20px;
+    height: 102px;
+    width: 80px;
+    margin-right: -60px;
+    margin-left: -5px;
+    -webkit-transform: rotate(-90deg);
+    -moz-transform: rotate(-90deg);
+    -ms-transform: rotate(-90deg);
+    -o-transform: rotate(-90deg);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+}
+
+.unitRow {
+    display: inline-block;
+}
+
 .upgradeArrow {
     float: left;
 }
 .upgradeArrow img {
     height: 100px;
+}
+.dropdown-menu {
+    color: #000000
 }
  
 /*# sourceMappingURL=style.css.map */

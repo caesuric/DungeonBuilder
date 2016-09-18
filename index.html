@@ -3,7 +3,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title>Dungeon Builder</title>
-    <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-3.1.0.min.js" type="text/javascript"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular-cookies.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular-animate.js"></script>
@@ -288,67 +288,290 @@
         </uib-tab>
         <uib-tab heading="Redesign (WIP)">
             <uib-accordion close-others="false">
-                <div uib-accordion-group is-open="unitsOpen">
+                <div uib-accordion-group is-open="unitsOpen" style="width: 1345px;">
                     <uib-accordion-heading>
-                        Units <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': unitsOpen, 'glyphicon-chevron-right': !unitsOpen}"></i>
+                        <div><i class="pull-left glyphicon" ng-class="{'glyphicon-chevron-down': unitsOpen, 'glyphicon-chevron-right': !unitsOpen}"></i><span style="margin-left: 10px;">Units</span></div>
                     </uib-accordion-heading>
-                    <div class="newUnitBox">
-                        <div class="outerRoundProgressWrapper" uib-tooltip="Click to buy acolytes. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true">
-                            <div class="roundProgressText">
-                                <br />{{smallUnitETA}}<br />
-                                <span style="font-size: 15px;" ng-show="smallUnitProgressPercentRounded!=100">{{smallUnitProgressPercentRounded}}%</span>
+                    You currently have <span ng-bind="reputation"></span> reputation. <button ng-click="dungeon.ritual()" uib-tooltip="A ritual increases your available reputation." tooltip-placement="right-bottom" tooltip-append-to-body="true">Ritual</button><br />
+                    You earn <span ng-bind="reputationRate"></span> reputation per second.<br />
+                    Space: <span id="population" ng-bind="population"></span>/<span id="maxPopulation" ng-bind="maxPopulation"></span><br/>
+                    Empty rooms: <span ng-bind="emptyRooms"></span> <button ng-click="dungeon.disintegrate()" uib-tooltip="Disintegration helps your minions dig rooms." tooltip-placement="right-bottom" tooltip-append-to-body="true">Disintegrate</button><br />
+                    Excavation progress:<br />
+                    <uib-progressbar class="progress-bar-custom" value="roomProgressPercent">{{roomETA}} {{roomProgressPercentRounded}}%</uib-progressbar>
+                    <div class="unitRow">
+                        <div class="unitHeaderText" uib-tooltip="Acolytes go out and teach of your power, gaining you reputation. Reputation allows you to recruit minions, monsters, and acolytes to improve your dungeon." tooltip-placement="right-bottom" tooltip-append-to-body="true">Acolytes</div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="smallAcolyteButton" uib-tooltip="Small acolytes earn you 10 rep/s. They take up 5 space each and cost 375 reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buySmallAcolyte()">
+                                <div class="roundProgressImage">
+                                    <img src="acolyte.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="smallUnitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{smallUnitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="smallUnitProgressPercentRounded!=100">{{smallUnitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="smallUnitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
                             </div>
-                            <div class="roundProgressWrapper">
-                                <round-progress current="smallUnitProgressPercent" max="100" radius="50"></round-progress>
+                            <span ng-show="smallAcolytes>0">x{{smallAcolytes}}</span>
+                        </div>
+                        <div class="upgradeArrow" uib-tooltip="Upgrades small acolytes to acolytes. Buys a room of acolytes, dismissing a room of small acolytes first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                            <img src="rightArrow.png"></img>
+                        </div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="acolyteButton" uib-tooltip="Acolytes earn you 160 rep/s. They take up 10 space each and cost 4k reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buyAcolyte()">
+                                <div class="roundProgressImage">
+                                    <img src="acolyte.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="unitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{unitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="unitProgressPercentRounded!=100">{{unitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="unitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                            <span ng-show="acolytes>0">x{{acolytes}}</span>
+                        </div>
+                        <div class="upgradeArrow" uib-tooltip="Upgrades acolytes to big acolytes. Buys a room of big acolytes, dismissing a room of acolytes first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                            <img src="rightArrow.png"></img>
+                        </div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="bigAcolyteButton" uib-tooltip="Big acolytes earn you 2.56k rep/s. They take up 25 space each and cost 477.68k reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buyBigAcolyte()">
+                                <div class="roundProgressImage">
+                                    <img src="acolyte.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="bigUnitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{bigUnitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="bigUnitProgressPercentRounded!=100">{{bigUnitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="bigUnitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                            <span ng-show="bigAcolytes>0">x{{bigAcolytes}}</span>
+                        </div>
+                        <div class="upgradeArrow" uib-tooltip="Upgrades big acolytes to huge acolytes. Buys a huge acolyte, dismissing a room of big acolytes first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                            <img src="rightArrow.png"></img>
+                        </div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="hugeAcolyteButton" uib-tooltip="Huge acolytes earn you 40.96k rep/s. They take up 50 space each and cost 71.01M reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buyHugeAcolyte()">
+                                <div class="roundProgressImage">
+                                    <img src="acolyte.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="hugeUnitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{hugeUnitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="hugeUnitProgressPercentRounded!=100">{{hugeUnitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="hugeUnitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                            <span ng-show="hugeAcolytes>0">x{{hugeAcolytes}}</span>
+                        </div>
+                        <div class="newUnitBox" style="margin-left: 60px;">
+                            <div class="outerRoundProgressWrapper" uib-tooltip="{{upgradeAcolytesText}}." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeAcolytes()">
+                                <div class="roundProgressImage">
+                                    <img src="plus.png" style="width: 64px; height: 64px;"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="acolyteUpgradeProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{acolyteUpgradeETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="acolyteUpgradeProgressPercentRounded!=100">{{acolyteUpgradeProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="acolyteUpgradeProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
                             </div>
                         </div>
-                        <span ng-show="smallAcolytes>0">x{{smallAcolytes}}</span>
                     </div>
-                    <div class="upgradeArrow">
-                        <img src="rightArrow.png"></img>
-                    </div>
-                    <div class="newUnitBox">
-                        <div class="outerRoundProgressWrapper">
-                            <div class="roundProgressText">
-                                <br />{{unitETA}}<br />
-                                <span style="font-size: 15px;" ng-show="unitProgressPercentRounded!=100">{{unitProgressPercentRounded}}%</span>
+                    <div class="unitRow">
+                        <div class="unitHeaderText" uib-tooltip="Minions dig additional rooms in your dungeon. Rooms limit how many units you can have." tooltip-placement="right-bottom" tooltip-append-to-body="true">Minions</div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="smallMinionButton" uib-tooltip="Small minions produce 10 labor/s. They take up 5 space each and cost 375 reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buySmallMinion()">
+                                <div class="roundProgressImage">
+                                    <img src="minion.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="smallUnitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{smallUnitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="smallUnitProgressPercentRounded!=100">{{smallUnitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="smallUnitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
                             </div>
-                            <div class="roundProgressWrapper">
-                                <round-progress current="unitProgressPercent" max="100" radius="50"></round-progress>
+                            <span ng-show="smallMinions>0">x{{smallMinions}}</span>
+                        </div>
+                        <div class="upgradeArrow" uib-tooltip="Upgrades small minions to minions. Buys a room of minions, dismissing a room of small minions first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                            <img src="rightArrow.png"></img>
+                        </div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="minionButton" uib-tooltip="Minions produce 160 labor/s. They take up 10 space each and cost 4k reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buyMinion()">
+                                <div class="roundProgressImage">
+                                    <img src="minion.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="unitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{unitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="unitProgressPercentRounded!=100">{{unitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="unitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                            <span ng-show="minions>0">x{{minions}}</span>
+                        </div>
+                        <div class="upgradeArrow" uib-tooltip="Upgrades minions to big minions. Buys a room of big minions, dismissing a room of minions first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                            <img src="rightArrow.png"></img>
+                        </div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="bigMinionButton" uib-tooltip="Big minions produce 2.56k labor/s. They take up 25 space each and cost 477.68k reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buyBigMinion()">
+                                <div class="roundProgressImage">
+                                    <img src="minion.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="bigUnitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{bigUnitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="bigUnitProgressPercentRounded!=100">{{bigUnitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="bigUnitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                            <span ng-show="bigMinions>0">x{{bigMinions}}</span>
+                        </div>
+                        <div class="upgradeArrow" uib-tooltip="Upgrades big minions to huge minions. Buys a huge minion, dismissing a room of big minions first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                            <img src="rightArrow.png"></img>
+                        </div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="hugeMinionButton" uib-tooltip="Huge minions produce 40.96k labor/s. They take up 50 space each and cost 71.01M reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buyHugeMinion()">
+                                <div class="roundProgressImage">
+                                    <img src="minion.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="hugeUnitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{hugeUnitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="hugeUnitProgressPercentRounded!=100">{{hugeUnitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="hugeUnitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                            <span ng-show="hugeMinions>0">x{{hugeMinions}}</span>
+                        </div>
+                        <div class="newUnitBox" style="margin-left: 60px;">
+                            <div class="outerRoundProgressWrapper" uib-tooltip="{{upgradeMinionsText}}." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeMinions()">
+                                <div class="roundProgressImage">
+                                    <img src="plus.png" style="width: 64px; height: 64px;"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="minionUpgradeProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{minionUpgradeETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="minionUpgradeProgressPercentRounded!=100">{{minionUpgradeProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="minionUpgradeProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
                             </div>
                         </div>
-                        <span ng-show="acolytes>0">x{{acolytes}}</span>
                     </div>
-                    <div class="upgradeArrow">
-                        <img src="rightArrow.png"></img>
-                    </div>
-                    <div class="newUnitBox">
-                        <div class="outerRoundProgressWrapper">
-                            <div class="roundProgressText">
-                                <br />{{bigUnitETA}}<br />
-                                <span style="font-size: 15px;" ng-show="bigUnitProgressPercentRounded!=100">{{bigUnitProgressPercentRounded}}%</span>
+                    <div class="unitRow">
+                        <div class="unitHeaderText" uib-tooltip="Monsters defend your dungeon from adventurers who wish to steal your treasure." tooltip-placement="right-bottom" tooltip-append-to-body="true">Monsters</div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="smallMonsterButton" uib-tooltip="Small monsters have 4 hp and deal 1 damage. They take up 5 space each and cost 375 reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buySmallMonster()">
+                                <div class="roundProgressImage">
+                                    <img src="monster.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="smallUnitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{smallUnitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="smallUnitProgressPercentRounded!=100">{{smallUnitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="smallUnitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
                             </div>
-                            <div class="roundProgressWrapper">
-                                <round-progress current="bigUnitProgressPercent" max="100" radius="50"></round-progress>
+                            <span ng-show="smallMonsters>0">x{{smallMonsters}}</span>
+                        </div>
+                        <div class="upgradeArrow" uib-tooltip="Upgrades small monsters to monsters. Buys a room of monsters, dismissing a room of small monsters first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                            <img src="rightArrow.png"></img>
+                        </div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="monsterButton" uib-tooltip="Monsters have 64 hp and deal 4-15 damage. They take up 10 space each and cost 4k reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buyMonster()">
+                                <div class="roundProgressImage">
+                                    <img src="monster.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="unitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{unitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="unitProgressPercentRounded!=100">{{unitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="unitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                            <span ng-show="monsters>0">x{{monsters}}</span>
+                        </div>
+                        <div class="upgradeArrow" uib-tooltip="Upgrades monsters to big monsters. Buys a room of big monsters, dismissing a room of monsters first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                            <img src="rightArrow.png"></img>
+                        </div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="bigMonsterButton" uib-tooltip="Big monsters have 1.02k hp and deal 62-240 damage. They take up 25 space each and cost 477.68k reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buyBigMonster()">
+                                <div class="roundProgressImage">
+                                    <img src="monster.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="bigUnitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{bigUnitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="bigUnitProgressPercentRounded!=100">{{bigUnitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="bigUnitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                            <span ng-show="bigMonsters>0">x{{bigMonsters}}</span>
+                        </div>
+                        <div class="upgradeArrow" uib-tooltip="Upgrades big monsters to huge monsters. Buys a huge monster, dismissing a room of big monsters first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                            <img src="rightArrow.png"></img>
+                        </div>
+                        <div class="newUnitBox">
+                            <div class="outerRoundProgressWrapper" id="hugeMonsterButton" uib-tooltip="Huge monsters have 16.38k hp and deal 1.02k-3.84k damage. They take up 50 space each and cost 71.01M reputation. Click to buy. Right-click for more options." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-right-click="showContextMenu($event)" ng-click="dungeon.buyHugeMonster()">
+                                <div class="roundProgressImage">
+                                    <img src="monster.png"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="hugeUnitProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{hugeUnitETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="hugeUnitProgressPercentRounded!=100">{{hugeUnitProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="hugeUnitProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                            <span ng-show="hugeMonsters>0">x{{hugeMonsters}}</span>
+                        </div>
+                        <div class="newUnitBox" style="margin-left: 60px;">
+                            <div class="outerRoundProgressWrapper" uib-tooltip="{{upgradeMonstersText}}." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeMonsters()">
+                                <div class="roundProgressImage">
+                                    <img src="plus.png" style="width: 64px; height: 64px;"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="monsterUpgradeProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{monsterUpgradeETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="monsterUpgradeProgressPercentRounded!=100">{{monsterUpgradeProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="monsterUpgradeProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
                             </div>
                         </div>
-                        <span ng-show="bigAcolytes>0">x{{bigAcolytes}}</span>
                     </div>
-                    <div class="upgradeArrow">
-                        <img src="rightArrow.png"></img>
-                    </div>
-                    <div class="newUnitBox">
-                        <div class="outerRoundProgressWrapper">
-                            <div class="roundProgressText">
-                                <br />{{hugeUnitETA}}<br />
-                                <span style="font-size: 15px;" ng-show="hugeUnitProgressPercentRounded!=100">{{hugeUnitProgressPercentRounded}}%</span>
-                            </div>
-                            <div class="roundProgressWrapper">
-                                <round-progress current="hugeUnitProgressPercent" max="100" radius="50"></round-progress>
-                            </div>
-                        </div>
-                        <span ng-show="hugeAcolytes>0">x{{hugeAcolytes}}</span>
-                    </div>
+
                 </div>
             </uib-accordion>
         </uib-tab>
@@ -358,5 +581,11 @@
     </div>
     </div>
     <div class="unitBox" id='roomTooltip' style="visibility: hidden; position: absolute;"></div>
+    <div uib-dropdown is-open="contextMenuOpen" dropdown-append-to-body="true" on-toggle="dropdownToggle()">
+        <div uib-dropdown-menu>
+            <ul id="dropdownMenu" class="dropdown-menu" uib-dropdown-menu role="menu" style="display: none; position: absolute; z-index: 100000" ng-style="{'left': menuX+'px', 'top': menuY+'px'}">
+            </ul>
+        </div>
+    </div>
   </body>
 </html>

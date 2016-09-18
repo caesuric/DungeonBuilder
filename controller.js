@@ -27,6 +27,22 @@
 
   app = angular.module('dungeonBuilder', ['ui.bootstrap', 'ngCookies', 'ngAnimate', 'angular-svg-round-progressbar']);
 
+  app.directive('ngRightClick', function($parse) {
+    return function(scope, element, attrs) {
+      var fn;
+      fn = $parse(attrs.ngRightClick);
+      console.log(fn);
+      element.bind('contextmenu', function(event) {
+        scope.$apply(function() {
+          event.preventDefault();
+          fn(scope, {
+            $event: event
+          });
+        });
+      });
+    };
+  });
+
   app.service('dungeon', Dungeon = (function() {
     function Dungeon($rootScope) {
       this.disintegrate = bind(this.disintegrate, this);
@@ -493,15 +509,15 @@
     };
 
     Dungeon.prototype.upgradeMinionsText = function() {
-      return "Upgrade Minions " + this.data.minionUpgradeNumber + " (" + (humanize(this.data.minionUpgradeCost)) + " reputation)";
+      return "Upgrade Minions " + this.data.minionUpgradeNumber + " (" + (humanize(this.data.minionUpgradeCost)) + " reputation). Upgrading minions increases their effectiveness by 20%";
     };
 
     Dungeon.prototype.upgradeAcolytesText = function() {
-      return "Upgrade Acolytes " + this.data.acolyteUpgradeNumber + " (" + (humanize(this.data.acolyteUpgradeCost)) + " reputation)";
+      return "Upgrade Acolytes " + this.data.acolyteUpgradeNumber + " (" + (humanize(this.data.acolyteUpgradeCost)) + " reputation). Upgrading acolytes increases their effectiveness by 20%";
     };
 
     Dungeon.prototype.upgradeMonstersText = function() {
-      return "Upgrade Monsters " + this.data.monsterUpgradeNumber + " (" + (humanize(this.data.monsterUpgradeCost)) + " reputation)";
+      return "Upgrade Monsters " + this.data.monsterUpgradeNumber + " (" + (humanize(this.data.monsterUpgradeCost)) + " reputation). Upgrading monsters increases their leveling speed by 20%";
     };
 
     Dungeon.prototype.upgradeUnitCombatText = function() {
@@ -2379,6 +2395,9 @@
   app.controller('main', function($scope, dungeon, $rootScope, $cookies, $window) {
     document.scope = $scope;
     $scope.unitsOpen = true;
+    $scope.contextMenuOpen = false;
+    $scope.menuX = 0;
+    $scope.menuY = 0;
     $scope.cookies = $cookies;
     $scope.dungeon = dungeon;
     $scope.reputation = 0;
@@ -2769,6 +2788,44 @@
         });
         return $scope.closeDungeonText = "Close Dungeon";
       }
+    };
+    $scope.showContextMenu = function($event) {
+      $scope.contextMenuOpen = !$scope.contextMenuOpen;
+      $scope.menuX = $event.pageX;
+      $scope.menuY = $event.pageY;
+      $('#dropdownMenu').css('visibility', 'hidden');
+      if ($event.currentTarget.id === 'smallAcolyteButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllSmallAcolytes()">' + $scope.buyAllSmallAcolytesText + '</a></li><li role="menuitem"><a href="#" onclick="document.simulator.buyRoomOfSmallAcolytes()">' + $scope.buyRoomOfSmallAcolytesText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellSmallAcolyte()">Dismiss One</a></li><li role="menuitem"><a href="#" onclick="document.simulator.sellRoomOfSmallAcolytes()">Dismiss Room</a></li>');
+      } else if ($event.currentTarget.id === 'acolyteButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllAcolytes()">' + $scope.buyAllAcolytesText + '</a></li><li role="menuitem"><a href="#" onclick="document.simulator.buyRoomOfAcolytes()">' + $scope.buyRoomOfAcolytesText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellAcolyte()">Dismiss One</a></li><li role="menuitem"><a href="#" onclick="document.simulator.sellRoomOfAcolytes()">Dismiss Room</a></li>');
+      } else if ($event.currentTarget.id === 'bigAcolyteButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllBigAcolytes()">' + $scope.buyAllBigAcolytesText + '</a></li><li role="menuitem"><a href="#" onclick="document.simulator.buyRoomOfBigAcolytes()">' + $scope.buyRoomOfBigAcolytesText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellBigAcolyte()">Dismiss One</a></li><li role="menuitem"><a href="#" onclick="document.simulator.sellRoomOfBigAcolytes()">Dismiss Room</a></li>');
+      } else if ($event.currentTarget.id === 'hugeAcolyteButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllHugeAcolytes()">' + $scope.buyAllHugeAcolytesText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellHugeAcolyte()">Dismiss One</a></li>');
+      } else if ($event.currentTarget.id === 'smallMinionButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllSmallMinions()">' + $scope.buyAllSmallMinionsText + '</a></li><li role="menuitem"><a href="#" onclick="document.simulator.buyRoomOfSmallMinions()">' + $scope.buyRoomOfSmallMinionsText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellSmallMinion()">Dismiss One</a></li><li role="menuitem"><a href="#" onclick="document.simulator.sellRoomOfSmallMinions()">Dismiss Room</a></li>');
+      } else if ($event.currentTarget.id === 'minionButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllMinions()">' + $scope.buyAllMinionsText + '</a></li><li role="menuitem"><a href="#" onclick="document.simulator.buyRoomOfMinions()">' + $scope.buyRoomOfMinionsText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellMinion()">Dismiss One</a></li><li role="menuitem"><a href="#" onclick="document.simulator.sellRoomOfMinions()">Dismiss Room</a></li>');
+      } else if ($event.currentTarget.id === 'bigMinionButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllBigMinions()">' + $scope.buyAllBigMinionsText + '</a></li><li role="menuitem"><a href="#" onclick="document.simulator.buyRoomOfBigMinions()">' + $scope.buyRoomOfBigMinionsText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellBigMinion()">Dismiss One</a></li><li role="menuitem"><a href="#" onclick="document.simulator.sellRoomOfBigMinions()">Dismiss Room</a></li>');
+      } else if ($event.currentTarget.id === 'hugeMinionButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllHugeMinions()">' + $scope.buyAllHugeMinionsText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellHugeMinion()">Dismiss One</a></li>');
+      } else if ($event.currentTarget.id === 'smallMonsterButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllSmallMonsters()">' + $scope.buyAllSmallMonstersText + '</a></li><li role="menuitem"><a href="#" onclick="document.simulator.buyRoomOfSmallMonsters()">' + $scope.buyRoomOfSmallMonstersText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellSmallMonster()">Dismiss One</a></li><li role="menuitem"><a href="#" onclick="document.simulator.sellRoomOfSmallMonsters()">Dismiss Room</a></li>');
+      } else if ($event.currentTarget.id === 'monsterButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllMonsters()">' + $scope.buyAllMonstersText + '</a></li><li role="menuitem"><a href="#" onclick="document.simulator.buyRoomOfMonsters()">' + $scope.buyRoomOfMonstersText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellMonster()">Dismiss One</a></li><li role="menuitem"><a href="#" onclick="document.simulator.sellRoomOfMonsters()">Dismiss Room</a></li>');
+      } else if ($event.currentTarget.id === 'bigMonsterButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllBigMonsters()">' + $scope.buyAllBigMonstersText + '</a></li><li role="menuitem"><a href="#" onclick="document.simulator.buyRoomOfBigMonsters()">' + $scope.buyRoomOfBigMonstersText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellBigMonster()">Dismiss One</a></li><li role="menuitem"><a href="#" onclick="document.simulator.sellRoomOfBigMonsters()">Dismiss Room</a></li>');
+      } else if ($event.currentTarget.id === 'hugeMonsterButton') {
+        $('#dropdownMenu').html('<li role="menuitem"><a href="#" onclick="document.simulator.buyAllHugeMonsters()">' + $scope.buyAllHugeMonstersText + '</a></li><li class="divider"></li><li role="menuitem"><a href="#" onclick="document.simulator.sellHugeMonster()">Dismiss One</a></li>');
+      }
+    };
+    $scope.dropdownToggle = function() {
+      setTimeout((function() {
+        $('#dropdownMenu').css('left', $scope.menuX);
+        $('#dropdownMenu').css('top', $scope.menuY);
+        $('#dropdownMenu').css('visibility', 'visible');
+      }), 1);
     };
     $scope.wipeOutSaveFile = function() {
       console.log('deleting save');
