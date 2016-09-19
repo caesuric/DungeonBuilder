@@ -697,7 +697,7 @@
     };
 
     Dungeon.prototype.updateRoomCanvas = function() {
-      var acolyteChartElement, color, i, j, k, l, m, minionChartElement, ref, ref1, ref2, ref3, room, unitRepresentation;
+      var color, i, j, k, l, m, ref, ref1, ref2, ref3, room, unitRepresentation;
       console.log('updating');
       document.canvas.clear();
       document.canvas.setBackgroundColor('gray');
@@ -758,58 +758,7 @@
       document.canvas.on('mouse:up', function(options) {
         return document.simulator.roomMouseUp(options);
       });
-      document.canvas.renderAll();
-      if (this.acolyteChart === void 0) {
-        acolyteChartElement = $("#acolyteChart");
-        this.acolyteChart = new Chart(acolyteChartElement, {
-          type: 'pie',
-          data: {
-            labels: ['Small', 'Normal', 'Big', 'Huge'],
-            datasets: [
-              {
-                label: 'Reputation Generated',
-                data: [Math.floor(this.data.smallAcolytes * 10 * this.data.acolyteMultiplier * this.data.devMultiplier), Math.floor(this.data.acolytes * 160 * this.data.acolyteMultiplier * this.data.devMultiplier), Math.floor(this.data.bigAcolytes * 2560 * this.data.acolyteMultiplier * this.data.devMultiplier), Math.floor(this.data.hugeAcolytes * 40960 * this.data.acolyteMultiplier * this.data.devMultiplier)],
-                backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)', 'rgba(75, 192, 192, 0.2)'],
-                borderColor: ['rgba(255,99,132,1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)'],
-                borderWidth: 0
-              }
-            ]
-          },
-          options: {
-            title: {
-              display: true,
-              text: 'Reputation Generated'
-            }
-          }
-        });
-        minionChartElement = $("#minionChart");
-        return this.minionChart = new Chart(minionChartElement, {
-          type: 'pie',
-          data: {
-            labels: ['Small', 'Normal', 'Big', 'Huge'],
-            datasets: [
-              {
-                label: 'Labor Generated',
-                data: [Math.floor(this.data.smallMinions * 10 * this.data.minionMultiplier * this.data.devMultiplier), Math.floor(this.data.minions * 160 * this.data.minionMultiplier * this.data.devMultiplier), Math.floor(this.data.bigMinions * 2560 * this.data.minionMultiplier * this.data.devMultiplier), Math.floor(this.data.hugeMinions * 40960 * this.data.minionMultiplier * this.data.devMultiplier)],
-                backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)', 'rgba(255, 206, 86, 0.2)', 'rgba(75, 192, 192, 0.2)'],
-                borderColor: ['rgba(255,99,132,1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)'],
-                borderWidth: 0
-              }
-            ]
-          },
-          options: {
-            title: {
-              display: true,
-              text: 'Labor Generated'
-            }
-          }
-        });
-      } else {
-        this.acolyteChart.data.datasets[0].data = [Math.floor(this.data.smallAcolytes * 10 * this.data.acolyteMultiplier * this.data.devMultiplier), Math.floor(this.data.acolytes * 160 * this.data.acolyteMultiplier * this.data.devMultiplier), Math.floor(this.data.bigAcolytes * 2560 * this.data.acolyteMultiplier * this.data.devMultiplier), Math.floor(this.data.hugeAcolytes * 40960 * this.data.acolyteMultiplier * this.data.devMultiplier)];
-        this.acolyteChart.update();
-        this.minionChart.data.datasets[0].data = [Math.floor(this.data.smallMinions * 10 * this.data.minionMultiplier * this.data.devMultiplier), Math.floor(this.data.minions * 160 * this.data.minionMultiplier * this.data.devMultiplier), Math.floor(this.data.bigMinions * 2560 * this.data.minionMultiplier * this.data.devMultiplier), Math.floor(this.data.hugeMinions * 40960 * this.data.minionMultiplier * this.data.devMultiplier)];
-        return this.minionChart.update();
-      }
+      return document.canvas.renderAll();
     };
 
     Dungeon.prototype.unitCode = function(room) {

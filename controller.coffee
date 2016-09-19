@@ -403,96 +403,96 @@ app.service 'dungeon', class Dungeon
             document.simulator.roomMouseUp(options)
         document.canvas.renderAll()
         
-        if @acolyteChart==undefined
-            acolyteChartElement = $("#acolyteChart")
-            @acolyteChart = new Chart(acolyteChartElement,
-                type: 'pie'
-                data:
-                    labels: [
-                        'Small'
-                        'Normal'
-                        'Big'
-                        'Huge'
-                    ]
-                    datasets: [ {
-                        label: 'Reputation Generated'
-                        data: [
-                            Math.floor(@data.smallAcolytes*10*@data.acolyteMultiplier*@data.devMultiplier)
-                            Math.floor(@data.acolytes*160*@data.acolyteMultiplier*@data.devMultiplier)
-                            Math.floor(@data.bigAcolytes*2560*@data.acolyteMultiplier*@data.devMultiplier)
-                            Math.floor(@data.hugeAcolytes*40960*@data.acolyteMultiplier*@data.devMultiplier)
-                        ]
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.2)'
-                            'rgba(54, 162, 235, 0.2)'
-                            'rgba(255, 206, 86, 0.2)'
-                            'rgba(75, 192, 192, 0.2)'
-                        ]
-                        borderColor: [
-                            'rgba(255,99,132,1)'
-                            'rgba(54, 162, 235, 1)'
-                            'rgba(255, 206, 86, 1)'
-                            'rgba(75, 192, 192, 1)'
-                        ]
-                        borderWidth: 0
-                    } ]
-                options:
-                    title:
-                        display: true
-                        text: 'Reputation Generated'
-                )
-            minionChartElement = $("#minionChart")
-            @minionChart = new Chart(minionChartElement,
-                type: 'pie'
-                data:
-                    labels: [
-                        'Small'
-                        'Normal'
-                        'Big'
-                        'Huge'
-                    ]
-                    datasets: [ {
-                        label: 'Labor Generated'
-                        data: [
-                            Math.floor(@data.smallMinions*10*@data.minionMultiplier*@data.devMultiplier)
-                            Math.floor(@data.minions*160*@data.minionMultiplier*@data.devMultiplier)
-                            Math.floor(@data.bigMinions*2560*@data.minionMultiplier*@data.devMultiplier)
-                            Math.floor(@data.hugeMinions*40960*@data.minionMultiplier*@data.devMultiplier)
-                        ]
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.2)'
-                            'rgba(54, 162, 235, 0.2)'
-                            'rgba(255, 206, 86, 0.2)'
-                            'rgba(75, 192, 192, 0.2)'
-                        ]
-                        borderColor: [
-                            'rgba(255,99,132,1)'
-                            'rgba(54, 162, 235, 1)'
-                            'rgba(255, 206, 86, 1)'
-                            'rgba(75, 192, 192, 1)'
-                        ]
-                        borderWidth: 0
-                    } ]
-                options:
-                    title:
-                        display: true
-                        text: 'Labor Generated'
-                )
-        else
-            @acolyteChart.data.datasets[0].data = [
-                Math.floor(@data.smallAcolytes*10*@data.acolyteMultiplier*@data.devMultiplier)
-                Math.floor(@data.acolytes*160*@data.acolyteMultiplier*@data.devMultiplier)
-                Math.floor(@data.bigAcolytes*2560*@data.acolyteMultiplier*@data.devMultiplier)
-                Math.floor(@data.hugeAcolytes*40960*@data.acolyteMultiplier*@data.devMultiplier)
-            ]
-            @acolyteChart.update()
-            @minionChart.data.datasets[0].data = [
-                Math.floor(@data.smallMinions*10*@data.minionMultiplier*@data.devMultiplier)
-                Math.floor(@data.minions*160*@data.minionMultiplier*@data.devMultiplier)
-                Math.floor(@data.bigMinions*2560*@data.minionMultiplier*@data.devMultiplier)
-                Math.floor(@data.hugeMinions*40960*@data.minionMultiplier*@data.devMultiplier)
-            ]
-            @minionChart.update()
+        # if @acolyteChart==undefined
+            # acolyteChartElement = $("#acolyteChart")
+            # @acolyteChart = new Chart(acolyteChartElement,
+                # type: 'pie'
+                # data:
+                    # labels: [
+                        # 'Small'
+                        # 'Normal'
+                        # 'Big'
+                        # 'Huge'
+                    # ]
+                    # datasets: [ {
+                        # label: 'Reputation Generated'
+                        # data: [
+                            # Math.floor(@data.smallAcolytes*10*@data.acolyteMultiplier*@data.devMultiplier)
+                            # Math.floor(@data.acolytes*160*@data.acolyteMultiplier*@data.devMultiplier)
+                            # Math.floor(@data.bigAcolytes*2560*@data.acolyteMultiplier*@data.devMultiplier)
+                            # Math.floor(@data.hugeAcolytes*40960*@data.acolyteMultiplier*@data.devMultiplier)
+                        # ]
+                        # backgroundColor: [
+                            # 'rgba(255, 99, 132, 0.2)'
+                            # 'rgba(54, 162, 235, 0.2)'
+                            # 'rgba(255, 206, 86, 0.2)'
+                            # 'rgba(75, 192, 192, 0.2)'
+                        # ]
+                        # borderColor: [
+                            # 'rgba(255,99,132,1)'
+                            # 'rgba(54, 162, 235, 1)'
+                            # 'rgba(255, 206, 86, 1)'
+                            # 'rgba(75, 192, 192, 1)'
+                        # ]
+                        # borderWidth: 0
+                    # } ]
+                # options:
+                    # title:
+                        # display: true
+                        # text: 'Reputation Generated'
+                # )
+            # minionChartElement = $("#minionChart")
+            # @minionChart = new Chart(minionChartElement,
+                # type: 'pie'
+                # data:
+                    # labels: [
+                        # 'Small'
+                        # 'Normal'
+                        # 'Big'
+                        # 'Huge'
+                    # ]
+                    # datasets: [ {
+                        # label: 'Labor Generated'
+                        # data: [
+                            # Math.floor(@data.smallMinions*10*@data.minionMultiplier*@data.devMultiplier)
+                            # Math.floor(@data.minions*160*@data.minionMultiplier*@data.devMultiplier)
+                            # Math.floor(@data.bigMinions*2560*@data.minionMultiplier*@data.devMultiplier)
+                            # Math.floor(@data.hugeMinions*40960*@data.minionMultiplier*@data.devMultiplier)
+                        # ]
+                        # backgroundColor: [
+                            # 'rgba(255, 99, 132, 0.2)'
+                            # 'rgba(54, 162, 235, 0.2)'
+                            # 'rgba(255, 206, 86, 0.2)'
+                            # 'rgba(75, 192, 192, 0.2)'
+                        # ]
+                        # borderColor: [
+                            # 'rgba(255,99,132,1)'
+                            # 'rgba(54, 162, 235, 1)'
+                            # 'rgba(255, 206, 86, 1)'
+                            # 'rgba(75, 192, 192, 1)'
+                        # ]
+                        # borderWidth: 0
+                    # } ]
+                # options:
+                    # title:
+                        # display: true
+                        # text: 'Labor Generated'
+                # )
+        # else
+            # @acolyteChart.data.datasets[0].data = [
+                # Math.floor(@data.smallAcolytes*10*@data.acolyteMultiplier*@data.devMultiplier)
+                # Math.floor(@data.acolytes*160*@data.acolyteMultiplier*@data.devMultiplier)
+                # Math.floor(@data.bigAcolytes*2560*@data.acolyteMultiplier*@data.devMultiplier)
+                # Math.floor(@data.hugeAcolytes*40960*@data.acolyteMultiplier*@data.devMultiplier)
+            # ]
+            # @acolyteChart.update()
+            # @minionChart.data.datasets[0].data = [
+                # Math.floor(@data.smallMinions*10*@data.minionMultiplier*@data.devMultiplier)
+                # Math.floor(@data.minions*160*@data.minionMultiplier*@data.devMultiplier)
+                # Math.floor(@data.bigMinions*2560*@data.minionMultiplier*@data.devMultiplier)
+                # Math.floor(@data.hugeMinions*40960*@data.minionMultiplier*@data.devMultiplier)
+            # ]
+            # @minionChart.update()
 
     unitCode: (room) =>
         occupants = room.occupantType
