@@ -101,6 +101,15 @@
       this.sellRoomOfBigMinions = bind(this.sellRoomOfBigMinions, this);
       this.sellRoomOfMinions = bind(this.sellRoomOfMinions, this);
       this.sellRoomOfSmallMinions = bind(this.sellRoomOfSmallMinions, this);
+      this.upgradeToHugeMonsters = bind(this.upgradeToHugeMonsters, this);
+      this.upgradeToBigMonsters = bind(this.upgradeToBigMonsters, this);
+      this.upgradeToMonsters = bind(this.upgradeToMonsters, this);
+      this.upgradeToHugeMinions = bind(this.upgradeToHugeMinions, this);
+      this.upgradeToBigMinions = bind(this.upgradeToBigMinions, this);
+      this.upgradeToMinions = bind(this.upgradeToMinions, this);
+      this.upgradeToHugeAcolytes = bind(this.upgradeToHugeAcolytes, this);
+      this.upgradeToBigAcolytes = bind(this.upgradeToBigAcolytes, this);
+      this.upgradeToAcolytes = bind(this.upgradeToAcolytes, this);
       this.buyRoomOfBigAcolytes = bind(this.buyRoomOfBigAcolytes, this);
       this.buyRoomOfAcolytes = bind(this.buyRoomOfAcolytes, this);
       this.buyRoomOfSmallAcolytes = bind(this.buyRoomOfSmallAcolytes, this);
@@ -521,11 +530,11 @@
     };
 
     Dungeon.prototype.upgradeUnitCombatText = function() {
-      return "Upgrade Acolyte/Minion Combat Ability " + this.data.unitCombatUpgradeNumber + " (" + (humanize(this.data.unitCombatUpgradeCost)) + " reputation)";
+      return "Upgrade Acolyte/Minion Combat Ability " + this.data.unitCombatUpgradeNumber + " (" + (humanize(this.data.unitCombatUpgradeCost)) + " reputation). Upgrading increases effectiveness of all non-monster units in combat by 2%";
     };
 
     Dungeon.prototype.upgradeKillBonusText = function() {
-      return "Upgrade Kill Bonus " + this.data.killBonusUpgradeNumber + " (" + (humanize(this.data.killBonusUpgradeCost)) + " reputation)";
+      return "Upgrade Kill Bonus " + this.data.killBonusUpgradeNumber + " (" + (humanize(this.data.killBonusUpgradeCost)) + " reputation). Upgrading makes killing adventurers grand you reputation! Current bonus per kill: " + (humanize(this.data.killBonus)) + " if killed by a small unit. " + (humanize(this.data.killBonus * 16)) + " if killed by a normal unit. " + (humanize(this.data.killBonus * 256)) + " if killed by a big unit. " + (humanize(this.data.killBonus * 4096)) + " if killed by a huge unit";
     };
 
     Dungeon.prototype.humanizeETA = function(eta) {
@@ -1488,6 +1497,174 @@
       }
     };
 
+    Dungeon.prototype.upgradeToAcolytes = function() {
+      var i, k, number, ref;
+      if (this.data.reputation < this.data.cost) {
+        return;
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.acolyte, 5);
+      if (number === 0) {
+        this.sellRoomOfSmallAcolytes();
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.acolyte, 5);
+      if (number > 0) {
+        for (i = k = 1, ref = number; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+          this.buyAcolyte();
+        }
+        return this.updateRoomCanvas();
+      }
+    };
+
+    Dungeon.prototype.upgradeToBigAcolytes = function() {
+      var bigCost, i, k, number, ref;
+      bigCost = Math.floor(this.data.cost * 119.42);
+      if (this.data.reputation < bigCost) {
+        return;
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.bigAcolyte, 5);
+      if (number === 0) {
+        this.sellRoomOfAcolytes();
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.bigAcolyte, 5);
+      if (number > 0) {
+        for (i = k = 1, ref = number; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+          this.buyBigAcolyte();
+        }
+        return this.updateRoomCanvas();
+      }
+    };
+
+    Dungeon.prototype.upgradeToHugeAcolytes = function() {
+      var hugeCost, i, k, number, ref;
+      hugeCost = Math.floor(this.data.cost * 17752.88);
+      if (this.data.reputation < hugeCost) {
+        return;
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.hugeAcolyte, 5);
+      if (number === 0) {
+        this.sellRoomOfBigAcolytes();
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.hugeAcolyte, 5);
+      if (number > 0) {
+        for (i = k = 1, ref = number; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+          this.buyHugeAcolyte();
+        }
+        return this.updateRoomCanvas();
+      }
+    };
+
+    Dungeon.prototype.upgradeToMinions = function() {
+      var i, k, number, ref;
+      if (this.data.reputation < this.data.cost) {
+        return;
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.minion, 5);
+      if (number === 0) {
+        this.sellRoomOfSmallMinions();
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.minion, 5);
+      if (number > 0) {
+        for (i = k = 1, ref = number; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+          this.buyMinion();
+        }
+        return this.updateRoomCanvas();
+      }
+    };
+
+    Dungeon.prototype.upgradeToBigMinions = function() {
+      var bigCost, i, k, number, ref;
+      bigCost = Math.floor(this.data.cost * 119.42);
+      if (this.data.reputation < bigCost) {
+        return;
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.bigMinion, 5);
+      if (number === 0) {
+        this.sellRoomOfMinions();
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.bigMinion, 5);
+      if (number > 0) {
+        for (i = k = 1, ref = number; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+          this.buyBigMinion();
+        }
+        return this.updateRoomCanvas();
+      }
+    };
+
+    Dungeon.prototype.upgradeToHugeMinions = function() {
+      var hugeCost, i, k, number, ref;
+      hugeCost = Math.floor(this.data.cost * 17752.88);
+      if (this.data.reputation < hugeCost) {
+        return;
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.hugeMinion, 5);
+      if (number === 0) {
+        this.sellRoomOfBigMinions();
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.hugeMinion, 5);
+      if (number > 0) {
+        for (i = k = 1, ref = number; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+          this.buyHugeMinion();
+        }
+        return this.updateRoomCanvas();
+      }
+    };
+
+    Dungeon.prototype.upgradeToMonsters = function() {
+      var i, k, number, ref;
+      if (this.data.reputation < this.data.cost) {
+        return;
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.monster, 5);
+      if (number === 0) {
+        this.sellRoomOfSmallMonsters();
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.monster, 5);
+      if (number > 0) {
+        for (i = k = 1, ref = number; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+          this.buyMonster();
+        }
+        return this.updateRoomCanvas();
+      }
+    };
+
+    Dungeon.prototype.upgradeToBigMonsters = function() {
+      var bigCost, i, k, number, ref;
+      bigCost = Math.floor(this.data.cost * 119.42);
+      if (this.data.reputation < bigCost) {
+        return;
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.bigMonster, 5);
+      if (number === 0) {
+        this.sellRoomOfMonsters();
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.bigMonster, 5);
+      if (number > 0) {
+        for (i = k = 1, ref = number; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+          this.buyBigMonster();
+        }
+        return this.updateRoomCanvas();
+      }
+    };
+
+    Dungeon.prototype.upgradeToHugeMonsters = function() {
+      var hugeCost, i, k, number, ref;
+      hugeCost = Math.floor(this.data.cost * 17752.88);
+      if (this.data.reputation < hugeCost) {
+        return;
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.hugeMonster, 5);
+      if (number === 0) {
+        this.sellRoomOfBigMonsters();
+      }
+      number = this.calculateRoomCapacityForBuyAll(unitTypes.hugeMonster, 5);
+      if (number > 0) {
+        for (i = k = 1, ref = number; 1 <= ref ? k <= ref : k >= ref; i = 1 <= ref ? ++k : --k) {
+          this.buyHugeMonster();
+        }
+        return this.updateRoomCanvas();
+      }
+    };
+
     Dungeon.prototype.sellRoomOfSmallMinions = function() {
       var i, k, number, ref;
       number = this.calculateRoomCapacityForSellAll(unitTypes.smallMinion);
@@ -2395,6 +2572,10 @@
   app.controller('main', function($scope, dungeon, $rootScope, $cookies, $window) {
     document.scope = $scope;
     $scope.unitsOpen = true;
+    $scope.dungeonOpen = false;
+    $scope.narrationOpen = false;
+    $scope.settingsOpen = false;
+    $scope.devToolsOpen = false;
     $scope.contextMenuOpen = false;
     $scope.menuX = 0;
     $scope.menuY = 0;

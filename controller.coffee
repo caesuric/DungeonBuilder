@@ -263,9 +263,9 @@ app.service 'dungeon', class Dungeon
     upgradeMonstersText: =>
         return "Upgrade Monsters #{@data.monsterUpgradeNumber} (#{humanize(@data.monsterUpgradeCost)} reputation). Upgrading monsters increases their leveling speed by 20%"
     upgradeUnitCombatText: =>
-        return "Upgrade Acolyte/Minion Combat Ability #{@data.unitCombatUpgradeNumber} (#{humanize(@data.unitCombatUpgradeCost)} reputation)"
+        return "Upgrade Acolyte/Minion Combat Ability #{@data.unitCombatUpgradeNumber} (#{humanize(@data.unitCombatUpgradeCost)} reputation). Upgrading increases effectiveness of all non-monster units in combat by 2%"
     upgradeKillBonusText: =>
-        return "Upgrade Kill Bonus #{@data.killBonusUpgradeNumber} (#{humanize(@data.killBonusUpgradeCost)} reputation)"
+        return "Upgrade Kill Bonus #{@data.killBonusUpgradeNumber} (#{humanize(@data.killBonusUpgradeCost)} reputation). Upgrading makes killing adventurers grand you reputation! Current bonus per kill: #{humanize(@data.killBonus)} if killed by a small unit. #{humanize(@data.killBonus*16)} if killed by a normal unit. #{humanize(@data.killBonus*256)} if killed by a big unit. #{humanize(@data.killBonus*4096)} if killed by a huge unit"
     humanizeETA: (eta) =>
         duration = moment.duration(eta*100) # Setting in milliseconds
         moment_time = duration.humanize()
@@ -901,6 +901,111 @@ app.service 'dungeon', class Dungeon
             for i in [1..number]
                 @buyBigAcolyte()
             @updateRoomCanvas()
+    upgradeToAcolytes: =>
+        if @data.reputation<@data.cost
+            return
+        number = @calculateRoomCapacityForBuyAll(unitTypes.acolyte, 5)
+        if number == 0
+            @sellRoomOfSmallAcolytes()
+        number = @calculateRoomCapacityForBuyAll(unitTypes.acolyte, 5)
+        if number>0
+            for i in [1..number]
+                @buyAcolyte()
+            @updateRoomCanvas()
+    upgradeToBigAcolytes: =>
+        bigCost = Math.floor(@data.cost*119.42)
+        if @data.reputation<bigCost
+            return
+        number = @calculateRoomCapacityForBuyAll(unitTypes.bigAcolyte, 5)
+        if number == 0
+            @sellRoomOfAcolytes()
+        number = @calculateRoomCapacityForBuyAll(unitTypes.bigAcolyte, 5)
+        if number>0
+            for i in [1..number]
+                @buyBigAcolyte()
+            @updateRoomCanvas()
+    upgradeToHugeAcolytes: =>
+        hugeCost = Math.floor(@data.cost*17752.88)
+        if @data.reputation<hugeCost
+            return
+        number = @calculateRoomCapacityForBuyAll(unitTypes.hugeAcolyte, 5)
+        if number == 0
+            @sellRoomOfBigAcolytes()
+        number = @calculateRoomCapacityForBuyAll(unitTypes.hugeAcolyte, 5)
+        if number>0
+            for i in [1..number]
+                @buyHugeAcolyte()
+            @updateRoomCanvas()
+    upgradeToMinions: =>
+        if @data.reputation<@data.cost
+            return
+        number = @calculateRoomCapacityForBuyAll(unitTypes.minion, 5)
+        if number == 0
+            @sellRoomOfSmallMinions()
+        number = @calculateRoomCapacityForBuyAll(unitTypes.minion, 5)
+        if number>0
+            for i in [1..number]
+                @buyMinion()
+            @updateRoomCanvas()
+    upgradeToBigMinions: =>
+        bigCost = Math.floor(@data.cost*119.42)
+        if @data.reputation<bigCost
+            return
+        number = @calculateRoomCapacityForBuyAll(unitTypes.bigMinion, 5)
+        if number == 0
+            @sellRoomOfMinions()
+        number = @calculateRoomCapacityForBuyAll(unitTypes.bigMinion, 5)
+        if number>0
+            for i in [1..number]
+                @buyBigMinion()
+            @updateRoomCanvas()
+    upgradeToHugeMinions: =>
+        hugeCost = Math.floor(@data.cost*17752.88)
+        if @data.reputation<hugeCost
+            return
+        number = @calculateRoomCapacityForBuyAll(unitTypes.hugeMinion, 5)
+        if number == 0
+            @sellRoomOfBigMinions()
+        number = @calculateRoomCapacityForBuyAll(unitTypes.hugeMinion, 5)
+        if number>0
+            for i in [1..number]
+                @buyHugeMinion()
+            @updateRoomCanvas()
+    upgradeToMonsters: =>
+        if @data.reputation<@data.cost
+            return
+        number = @calculateRoomCapacityForBuyAll(unitTypes.monster, 5)
+        if number == 0
+            @sellRoomOfSmallMonsters()
+        number = @calculateRoomCapacityForBuyAll(unitTypes.monster, 5)
+        if number>0
+            for i in [1..number]
+                @buyMonster()
+            @updateRoomCanvas()
+    upgradeToBigMonsters: =>
+        bigCost = Math.floor(@data.cost*119.42)
+        if @data.reputation<bigCost
+            return
+        number = @calculateRoomCapacityForBuyAll(unitTypes.bigMonster, 5)
+        if number == 0
+            @sellRoomOfMonsters()
+        number = @calculateRoomCapacityForBuyAll(unitTypes.bigMonster, 5)
+        if number>0
+            for i in [1..number]
+                @buyBigMonster()
+            @updateRoomCanvas()
+    upgradeToHugeMonsters: =>
+        hugeCost = Math.floor(@data.cost*17752.88)
+        if @data.reputation<hugeCost
+            return
+        number = @calculateRoomCapacityForBuyAll(unitTypes.hugeMonster, 5)
+        if number == 0
+            @sellRoomOfBigMonsters()
+        number = @calculateRoomCapacityForBuyAll(unitTypes.hugeMonster, 5)
+        if number>0
+            for i in [1..number]
+                @buyHugeMonster()
+            @updateRoomCanvas()
     sellRoomOfSmallMinions: =>
         number = @calculateRoomCapacityForSellAll(unitTypes.smallMinion)
         if number>0
@@ -1470,6 +1575,10 @@ class DungeonData
 app.controller 'main', ($scope, dungeon, $rootScope, $cookies, $window) ->
     document.scope = $scope
     $scope.unitsOpen = true
+    $scope.dungeonOpen = false
+    $scope.narrationOpen = false
+    $scope.settingsOpen = false
+    $scope.devToolsOpen = false
     $scope.contextMenuOpen = false
     $scope.menuX = 0
     $scope.menuY = 0

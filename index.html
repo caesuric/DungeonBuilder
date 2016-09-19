@@ -17,7 +17,7 @@
     <link href='css/style.css' rel='stylesheet' type='text/css'>
   </head>
   <body>
-    <div id='rightPanel' style="position:absolute; bottom: 0; right: 0;width: 512px;">
+<!--    <div id='rightPanel' style="position: fixed; bottom: 0; right: 0;width: 512px;">
         <div id='narrationContainer' style="width: 512px; height: 300px; float: top; overflow: scroll;"></div>
     </div>
     <uib-tabset>
@@ -286,9 +286,16 @@
             <input type="checkbox" ng-click="toggleAlerts()" checked>Toggle Alerts</button><br />
             <button type="button" ng-click="wipeOutSaveFile()">WIPE SAVE FILE</button>
         </uib-tab>
-        <uib-tab heading="Redesign (WIP)">
+        <uib-tab heading="Redesign (WIP)">-->
+            <h3>Dungeon Builder</h3>
             <uib-accordion close-others="false">
-                <div uib-accordion-group is-open="unitsOpen" style="width: 1345px;">
+                <div uib-accordion-group is-open="narrationOpen" style="width: 1582px;">
+                    <uib-accordion-heading>
+                        <div><i class="pull-left glyphicon" ng-class="{'glyphicon-chevron-down': narrationOpen, 'glyphicon-chevron-right': !narrationOpen}"></i><span style="margin-left: 10px;">Log</span></div>
+                    </uib-accordion-heading>
+                    <div id='narrationContainer' style="width: 512px; height: 300px; float: top; overflow: scroll;"></div>
+                </div>
+                <div uib-accordion-group is-open="unitsOpen" style="width: 1582px;">
                     <uib-accordion-heading>
                         <div><i class="pull-left glyphicon" ng-class="{'glyphicon-chevron-down': unitsOpen, 'glyphicon-chevron-right': !unitsOpen}"></i><span style="margin-left: 10px;">Units</span></div>
                     </uib-accordion-heading>
@@ -316,7 +323,7 @@
                             </div>
                             <span ng-show="smallAcolytes>0">x{{smallAcolytes}}</span>
                         </div>
-                        <div class="upgradeArrow" uib-tooltip="Upgrades small acolytes to acolytes. Buys a room of acolytes, dismissing a room of small acolytes first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                        <div class="upgradeArrow" uib-tooltip="Upgrades small acolytes to acolytes. Buys a room of acolytes, dismissing a room of small acolytes first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeToAcolytes()">
                             <img src="rightArrow.png"></img>
                         </div>
                         <div class="newUnitBox">
@@ -335,7 +342,7 @@
                             </div>
                             <span ng-show="acolytes>0">x{{acolytes}}</span>
                         </div>
-                        <div class="upgradeArrow" uib-tooltip="Upgrades acolytes to big acolytes. Buys a room of big acolytes, dismissing a room of acolytes first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                        <div class="upgradeArrow" uib-tooltip="Upgrades acolytes to big acolytes. Buys a room of big acolytes, dismissing a room of acolytes first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeToBigAcolytes()">
                             <img src="rightArrow.png"></img>
                         </div>
                         <div class="newUnitBox">
@@ -354,7 +361,7 @@
                             </div>
                             <span ng-show="bigAcolytes>0">x{{bigAcolytes}}</span>
                         </div>
-                        <div class="upgradeArrow" uib-tooltip="Upgrades big acolytes to huge acolytes. Buys a huge acolyte, dismissing a room of big acolytes first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                        <div class="upgradeArrow" uib-tooltip="Upgrades big acolytes to huge acolytes. Buys a huge acolyte, dismissing a room of big acolytes first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeToHugeAcolytes()">
                             <img src="rightArrow.png"></img>
                         </div>
                         <div class="newUnitBox">
@@ -388,6 +395,21 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="newUnitBox" style="margin-left: 60px; margin-top: 45px; margin-bottom: -45px;">
+                            <div class="outerRoundProgressWrapper" uib-tooltip="{{upgradeUnitCombatText}}." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeUnitCombat()">
+                                <div class="roundProgressImage">
+                                    <img src="plus.png" style="width: 64px; height: 64px;"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="unitCombatUpgradeProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{unitCombatUpgradeETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="unitCombatUpgradeProgressPercentRounded!=100">{{unitCombatUpgradeProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="unitCombatUpgradeProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="unitRow">
                         <div class="unitHeaderText" uib-tooltip="Minions dig additional rooms in your dungeon. Rooms limit how many units you can have." tooltip-placement="right-bottom" tooltip-append-to-body="true">Minions</div>
@@ -407,7 +429,7 @@
                             </div>
                             <span ng-show="smallMinions>0">x{{smallMinions}}</span>
                         </div>
-                        <div class="upgradeArrow" uib-tooltip="Upgrades small minions to minions. Buys a room of minions, dismissing a room of small minions first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                        <div class="upgradeArrow" uib-tooltip="Upgrades small minions to minions. Buys a room of minions, dismissing a room of small minions first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeToMinions()">
                             <img src="rightArrow.png"></img>
                         </div>
                         <div class="newUnitBox">
@@ -426,7 +448,7 @@
                             </div>
                             <span ng-show="minions>0">x{{minions}}</span>
                         </div>
-                        <div class="upgradeArrow" uib-tooltip="Upgrades minions to big minions. Buys a room of big minions, dismissing a room of minions first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                        <div class="upgradeArrow" uib-tooltip="Upgrades minions to big minions. Buys a room of big minions, dismissing a room of minions first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeToBigMinions()">
                             <img src="rightArrow.png"></img>
                         </div>
                         <div class="newUnitBox">
@@ -445,7 +467,7 @@
                             </div>
                             <span ng-show="bigMinions>0">x{{bigMinions}}</span>
                         </div>
-                        <div class="upgradeArrow" uib-tooltip="Upgrades big minions to huge minions. Buys a huge minion, dismissing a room of big minions first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                        <div class="upgradeArrow" uib-tooltip="Upgrades big minions to huge minions. Buys a huge minion, dismissing a room of big minions first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeToHugeMinions()">
                             <img src="rightArrow.png"></img>
                         </div>
                         <div class="newUnitBox">
@@ -498,7 +520,7 @@
                             </div>
                             <span ng-show="smallMonsters>0">x{{smallMonsters}}</span>
                         </div>
-                        <div class="upgradeArrow" uib-tooltip="Upgrades small monsters to monsters. Buys a room of monsters, dismissing a room of small monsters first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                        <div class="upgradeArrow" uib-tooltip="Upgrades small monsters to monsters. Buys a room of monsters, dismissing a room of small monsters first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeToMonsters()">
                             <img src="rightArrow.png"></img>
                         </div>
                         <div class="newUnitBox">
@@ -517,7 +539,7 @@
                             </div>
                             <span ng-show="monsters>0">x{{monsters}}</span>
                         </div>
-                        <div class="upgradeArrow" uib-tooltip="Upgrades monsters to big monsters. Buys a room of big monsters, dismissing a room of monsters first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                        <div class="upgradeArrow" uib-tooltip="Upgrades monsters to big monsters. Buys a room of big monsters, dismissing a room of monsters first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeToBigMonsters()">
                             <img src="rightArrow.png"></img>
                         </div>
                         <div class="newUnitBox">
@@ -536,7 +558,7 @@
                             </div>
                             <span ng-show="bigMonsters>0">x{{bigMonsters}}</span>
                         </div>
-                        <div class="upgradeArrow" uib-tooltip="Upgrades big monsters to huge monsters. Buys a huge monster, dismissing a room of big monsters first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true">
+                        <div class="upgradeArrow" uib-tooltip="Upgrades big monsters to huge monsters. Buys a huge monster, dismissing a room of big monsters first if needed." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeToHugeMonsters()">
                             <img src="rightArrow.png"></img>
                         </div>
                         <div class="newUnitBox">
@@ -570,20 +592,64 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="newUnitBox" style="margin-left: 60px;">
+                            <div class="outerRoundProgressWrapper" uib-tooltip="{{upgradeKillBonusText}}." tooltip-placement="right-bottom" tooltip-append-to-body="true" ng-click="dungeon.upgradeKillBonus()">
+                                <div class="roundProgressImage">
+                                    <img src="plus.png" style="width: 64px; height: 64px;"></img>
+                                </div>
+                                <div class="roundProgressCircle" ng-show="killBonusUpgradeProgressPercentRounded!=100"></div>
+                                <div class="roundProgressText">
+                                    <br />{{killBonusUpgradeETA}}<br />
+                                    <span style="font-size: 15px;" ng-show="killBonusUpgradeProgressPercentRounded!=100">{{killBonusUpgradeProgressPercentRounded}}%</span>
+                                </div>
+                                <div class="roundProgressWrapper">
+                                    <round-progress current="killBonusUpgradeProgressPercent" max="100" radius="50"></round-progress>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
+                </div>
+                <div uib-accordion-group is-open="dungeonOpen" style="width: 1582px;">
+                    <uib-accordion-heading>
+                        <div><i class="pull-left glyphicon" ng-class="{'glyphicon-chevron-down': dungeonOpen, 'glyphicon-chevron-right': !dungeonOpen}"></i><span style="margin-left: 10px;">Dungeon</span></div>
+                    </uib-accordion-heading>
+                    Dungeon Level <span ng-bind="dungeonLevel"></span><br />
+                    (higher dungeon levels attract stronger adventurers)<br />
+                    Progress to next dungeon level:<br />
+                    <uib-progressbar class="progress-bar-custom" value="tierProgressPercent">{{tierETA}} {{tierProgressPercentRounded}}%</uib-progressbar>
+                    <button type="button" ng-click="closeDungeon()" ng-bind="closeDungeonText">Close Dungeon</button> <button ng-click="dungeon.razeTown()">Raze Town</button> <button ng-click="dungeon.diplomacy()">Diplomacy</button><br />
+                    Closing the dungeon prevents adventurers from entering. Razing towns attracts more adventurers. Diplomacy reduces how many adventurers show up.<br />
+                    Current adventurer multiplier: {{adventurerMultiplier}}%<br />
+                    <div class="canvasContainer" id='mainCanvasContainer' style="width: 768px; height: 768; float: left;">
+                        <canvas height='768' id='mainCanvas' width='768' style="float: left; width: 768px;"></canvas>
+                    </div>
+                </div>
+                <div uib-accordion-group is-open="settingsOpen" style="width: 1582px;">
+                    <uib-accordion-heading>
+                        <div><i class="pull-left glyphicon" ng-class="{'glyphicon-chevron-down': settingsOpen, 'glyphicon-chevron-right': !settingsOpen}"></i><span style="margin-left: 10px;">Settings</span></div>
+                    </uib-accordion-heading>
+                    <button type="button" ng-click="toggleNarrationBox()">Toggle Narration Box</button><br />
+                    <input type="checkbox" ng-click="toggleAlerts()" checked>Toggle Alerts</button><br />
+                    <button type="button" ng-click="wipeOutSaveFile()">WIPE SAVE FILE</button>
+                </div>
+                <div uib-accordion-group is-open="devToolsOpen" style="width: 1582px;">
+                    <uib-accordion-heading>
+                        <div><i class="pull-left glyphicon" ng-class="{'glyphicon-chevron-down': devToolsOpen, 'glyphicon-chevron-right': !devToolsOpen}"></i><span style="margin-left: 10px;">DevTools</span></div>
+                    </uib-accordion-heading>
+                    Dev Multiplier: <input type="number" ng-model="devMultiplier" /><button type="button" ng-click="setDevMultiplier()">OK</button><br />
+                    Timeskip: <input type="number" style="width: 50px;" ng-model="skipDays" />d<input type="number" style="width: 50px;" ng-model="skipHours" />h<input type="number" style="width: 50px;" ng-model="skipMinutes" />m<button type="button" ng-click="timeSkip()">OK</button>
                 </div>
             </uib-accordion>
-        </uib-tab>
-    </uib-tabset>
-    <div style="position: absolute; bottom: 0; width: 400px">
-    <div uib-alert id='alerts' style="width: 400px" ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')" close="closeAlert($index)" dismiss-on-timeout="10000" ng-hide="alert.expired=='true'">{{alert.msg}}
+        <!--</uib-tab>
+    </uib-tabset>-->
+    <div style="position: fixed; bottom: 0; width: 400px">
+        <div uib-alert id='alerts' style="width: 400px" ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')" close="closeAlert($index)" dismiss-on-timeout="10000" ng-hide="alert.expired=='true'">{{alert.msg}}
     </div>
     </div>
-    <div class="unitBox" id='roomTooltip' style="visibility: hidden; position: absolute;"></div>
+    <div class="unitBox" id='roomTooltip' style="visibility: hidden; position: fixed;"></div>
     <div uib-dropdown is-open="contextMenuOpen" dropdown-append-to-body="true" on-toggle="dropdownToggle()">
         <div uib-dropdown-menu>
-            <ul id="dropdownMenu" class="dropdown-menu" uib-dropdown-menu role="menu" style="display: none; position: absolute; z-index: 100000" ng-style="{'left': menuX+'px', 'top': menuY+'px'}">
+            <ul id="dropdownMenu" class="dropdown-menu" uib-dropdown-menu role="menu" style="display: none; position: fixed; z-index: 100000" ng-style="{'left': menuX+'px', 'top': menuY+'px'}">
             </ul>
         </div>
     </div>

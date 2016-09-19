@@ -39,7 +39,7 @@ body {
 }
 
 body {
-    background-color: #000000;
+    background-color: #222222;
     color: #ffffff;
 }
 
@@ -147,7 +147,7 @@ input {
     height: 100px;
 }
 .dropdown-menu {
-    color: #000000
+    color: #222222;
 }
  
 /*# sourceMappingURL=style.css.map */
