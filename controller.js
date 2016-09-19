@@ -501,21 +501,7 @@
       return (this.data.currentTierReputation / nextTierReputation[this.data.dungeonLevel - 1] * 100).toString();
     };
 
-    Dungeon.prototype.updateRoomBox = function() {
-      var i, k, name, ref, room, text;
-      text = "Room Summary:<br><br>";
-      for (i = k = 0, ref = this.data.rooms - 1; 0 <= ref ? k <= ref : k >= ref; i = 0 <= ref ? ++k : --k) {
-        room = this.data.roomObjects[i];
-        text += "Room " + (i + 1).toString() + ":<br>Contains ";
-        name = this.unitName(room.occupantType);
-        text += name;
-        if (name !== 'nothing' && name !== 'treasure') {
-          text += 's';
-        }
-        text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>";
-      }
-      return document.getElementById('roomsPanel').innerHTML = text;
-    };
+    Dungeon.prototype.updateRoomBox = function() {};
 
     Dungeon.prototype.upgradeMinionsText = function() {
       return "Upgrade Minions " + this.data.minionUpgradeNumber + " (" + (humanize(this.data.minionUpgradeCost)) + " reputation). Upgrading minions increases their effectiveness by 20%";

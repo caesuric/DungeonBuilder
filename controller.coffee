@@ -246,16 +246,16 @@ app.service 'dungeon', class Dungeon
             return '100'
         return (@data.currentTierReputation/nextTierReputation[@data.dungeonLevel-1]*100).toString()
     updateRoomBox: =>
-        text = "Room Summary:<br><br>"
-        for i in [0..@data.rooms-1]
-            room = @data.roomObjects[i]
-            text += "Room "+(i+1).toString()+":<br>Contains "
-            name = @unitName(room.occupantType)
-            text += name
-            if name!='nothing' and name!= 'treasure'
-                text += 's'
-            text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>"
-        document.getElementById('roomsPanel').innerHTML = text
+        # text = "Room Summary:<br><br>"
+        # for i in [0..@data.rooms-1]
+            # room = @data.roomObjects[i]
+            # text += "Room "+(i+1).toString()+":<br>Contains "
+            # name = @unitName(room.occupantType)
+            # text += name
+            # if name!='nothing' and name!= 'treasure'
+                # text += 's'
+            # text += ".<br>Population: " + room.population.toString() + "/" + room.size.toString() + "<br><br>"
+        # document.getElementById('roomsPanel').innerHTML = text
     upgradeMinionsText: =>
         return "Upgrade Minions #{@data.minionUpgradeNumber} (#{humanize(@data.minionUpgradeCost)} reputation). Upgrading minions increases their effectiveness by 20%"
     upgradeAcolytesText: =>
